@@ -19,7 +19,7 @@ def ppe_detection(source: str, result_name: str, annotated_mode: bool=False) -> 
     :параметр source: путь до оригинального файла (строка)
     :параметр result_name: путь до нового файла (строка)
     :параметр annotated_mode: переход в режим аннотации лейблов (булевое значение)
-    :return: лист предсказанных классов
+    :return: лист предсказанний модели в формате supervision
     """
     yolo_predict = model(source)[0]
     
@@ -45,12 +45,23 @@ def ppe_detection(source: str, result_name: str, annotated_mode: bool=False) -> 
 # ----------------------------- video processing -----------------------------
 
 def save_interval(start: int, end: int, overall: int) -> None:
+    """
+    Получение интервалов детекции СИЗ по видео
+    :параметр start: начало записи (целое число)
+    :параметр result_name: путь до нового файла (строка)
+    :параметр overall: общее время (целое число)
+    """
     with open('detections.csv', 'a', newline='') as file:
         writer = csv.writer(file)
         writer.writerow([start, end, overall])
 
 
 def process_video(source: str, destination: str = 'result.mp4') -> None:
+    """
+    Получение интервалов детекции СИЗ по видео
+    :параметр source: путь до оригинального файла (строка)
+    :параметр destination: путь до нового файла (строка)
+    """
     video_info = sv.VideoInfo.from_video_path(video_path=source)
     frames_generator = sv.get_video_frames_generator(source_path=source)
     box_annotator = sv.BoundingBoxAnnotator()
