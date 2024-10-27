@@ -2,7 +2,8 @@ import gradio as gr
 import webbrowser, os
 import time
 import plotly.express as px
-# from processing import *
+import pandas as pd
+from processing import *
 
 filepath="./files/"
 
@@ -51,15 +52,40 @@ def photoProcessing(file, ):
     print(file)
     if file is not None:
         info_req()
-        # sign_detection(file, './files/detection.jpg')
-        # number, probability = sign_recognition('./files/detection.jpg', 'recognition.jpg')
-        # string = f'Номер: {number}\n\nУверенность OCR-модели: {probability:.2f}%'
+        detections_list = ppe_detection(file, './files/detections.jpg')
+        class_names = detections_list.data['class_name']
+        confidences = detections_list.confidence
+        output = "\n".join([f"{class_names[i]}: {confidences[i]:.5f}" for i in range(len(class_names))])
+        pd.set_option('display.precision', 3)
+        df = pd.DataFrame({
+            'class_name': class_names,
+            'confidence': confidences
+        })
+        df['confidence'] = df['confidence'].astype('float64').round(3)
         info_res()
-        return './files/bot_deer_2.jpg', './files/bot_deer_2.jpg', 'Здесь будут распознанные классы'
-        # return './files/detection.jpg', './files/cropped_image_recognition.jpg', string
+        return './files/detections.jpg', df
+    else:
+        warning_file()
+        return None, None
+
+def videoProcessing(file, ):
+    time.sleep(1)
+    if file is not None:
+        info_req()
+        process_video(source=file, destination='result.mp4')
+        info_res()
+        with open('detections.csv', mode='r') as detect_file:
+            string = detect_file.readlines()
+        full_text = ''
+        for el in string:
+            el = el.replace('\n', '')
+            data = el.split(',')
+            full_text += 'Начало интервала: ' + data[0] + '; Конец интервала: ' + data[1] + '; Количество встреченных СИЗ: ' + data[2] + '\n'
+        return 'result.mp4', full_text
     else:
         warning_file()
         return None, None, None
+
 
 custom_css = """
 #theme-toggle {
@@ -109,7 +135,7 @@ with gr.Blocks(theme=light_theme, css=custom_css) as demo:
 
     with gr.Row():
         with gr.Column():
-            with gr.Tab('Детектирование и распознавание по фотографии'):
+            with gr.Tab('Распознавание PPE по фотографии'):
                 file_photo = gr.File(label="Фотография", file_types=['.png','.jpeg','.jpg'])
                 with gr.Column():
                     with gr.Row():
@@ -119,26 +145,37 @@ with gr.Blocks(theme=light_theme, css=custom_css) as demo:
                         with gr.Row('Результат обработки'):
                             with gr.Column():
                                 predictImage = gr.Image(type="pil", label="Предсказание модели")
-                                cropImage = gr.Image(type="pil", label="Обрезанный фрагмент")
                             with gr.Column():
                                 gr.Markdown("""<p align="start"><font size="4px">Что происходит в данном блоке?<br></p>
                                             <ul><font size="3px">
-                                            <li>Детекция СИЗ медицинского персонала (верняя картинка);</li>
-                                            <li>Кроп изображения по bbox от YOLO (нижняя картинка);</li>
-                                            <li>Распознание СИЗ медицинского персонала (текстовое поле ниже);</li>
+                                            <li>Детекция СИЗ медицинского персонала;</li>
+                                            <li>Найденные классы СИЗ медицинского персонала и уверенность модели (слева-направо);</li>
                                             </ul></font>""")
-                                predictImageClass = gr.Textbox(label="Полученные классы", placeholder="Здесь будет таблица данных по файлам", interactive=False, lines=7)
-                                
+                                predictImageClass = gr.DataFrame(label="Полученные классы", headers=["Class Name", "Confidence"])
+            with gr.Tab('Трекинг PPE по видео'):
+                file_video = gr.File(label="Видео", file_types=['.mp4','.mkv'])
+                with gr.Column():
+                    with gr.Row(): 
+                        btn_video = gr.Button(value="Начать распознавание",)
+                        triggerVideo = gr.Button(value="Подробнее",)
+                with gr.Row():
+                    with gr.Tab('Результат обработки'):
+                        with gr.Row():
+                            predictVideo = gr.Video(label="Обработанное видео", interactive=False)
+                            predictVideoClass = gr.Textbox(label="Результат обработки", placeholder="Здесь будут общие данные по файлу", interactive=False, lines=7)
+                                                        
     with gr.Row(): 
         with gr.Row(): 
+            clr_btn = gr.ClearButton([file_photo, predictImage, predictImageClass, ], value="Очистить контекст",)
             btn2 = gr.Button(value="Посмотреть файлы",)
-            clr_btn = gr.ClearButton([file_photo, predictImage, cropImage, predictImageClass, ], value="Очистить контекст",)
     
     with gr.Row():
         gr.Markdown("""<p align="center">Выполнил Луняков Алексей, студент ИКБО-04-21</p>""")
 
-    btn_photo.click(photoProcessing, inputs=[file_photo, ], outputs=[predictImage, cropImage, predictImageClass,])
+    btn_photo.click(photoProcessing, inputs=[file_photo, ], outputs=[predictImage, predictImageClass,])
+    btn_video.click(videoProcessing, inputs=[file_video, ], outputs=[predictVideo, predictVideoClass,])
     btn2.click(fileOpen)
     triggerImage.click(info_fn)
+    triggerVideo.click(info_fn)
 
 demo.launch(allowed_paths=["/assets/"])
