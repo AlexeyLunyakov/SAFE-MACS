@@ -1,5 +1,5 @@
 <a name="readme-top"></a>  
-<img width="70%" src="https://github.com/AlexeyLunyakov/SAFE-MACS/blob/main/app/assets/safe-macs-h.png" alt="product banner">
+<div align="center"><img width="100%" src="https://github.com/AlexeyLunyakov/SAFE-MACS/blob/main/app/assets/safe-macs-h.png" alt="product banner"></div>
 <div align="center">
   <p align="center">
     <h1 align="center">Safety Automated Medical Control System (SAFE-MACS)</h1>
