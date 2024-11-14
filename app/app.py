@@ -8,8 +8,9 @@ from processing import *
 filepath="./files/"
 
 light_theme = gr.themes.Monochrome(
-    primary_hue="red",
-    secondary_hue="amber",
+    primary_hue="teal",
+    secondary_hue="emerald",
+    neutral_hue="gray",
     text_size="lg",
     spacing_size="lg",
     font=[gr.themes.GoogleFont('JetBrains Mono'), gr.themes.GoogleFont('Limelight'), 'system-ui', 'sans-serif'],
@@ -21,8 +22,8 @@ light_theme = gr.themes.Monochrome(
 )
 
 dark_theme = gr.themes.Monochrome(
-    primary_hue="lime",
-    secondary_hue="blue",
+    primary_hue="green",
+    secondary_hue="lime",
     text_size="lg",
     spacing_size="lg",
     font=[gr.themes.GoogleFont('Inter'), gr.themes.GoogleFont('Limelight'), 'system-ui', 'sans-serif'],
@@ -55,7 +56,6 @@ def photoProcessing(file, ):
         detections_list = ppe_detection(file, './files/detections.jpg')
         class_names = detections_list.data['class_name']
         confidences = detections_list.confidence
-        output = "\n".join([f"{class_names[i]}: {confidences[i]:.5f}" for i in range(len(class_names))])
         pd.set_option('display.precision', 3)
         df = pd.DataFrame({
             'class_name': class_names,
@@ -129,7 +129,7 @@ with gr.Blocks(theme=light_theme, css=custom_css) as demo:
     )
     gr.Markdown("""<a name="readme-top"></a>
                     <h1 style="text-align:center;line-height: 0.3;" ><font size="30px"><strong style="font-family: Limelight">SAFE-MACS</strong></font></h1>
-                    <p style="text-align:center;color:#de2c00;line-height: 0.1;font-weight: bold;">Safety Automated Medical Control System</p>
+                    <p style="text-align:center;color:#0FC28F;line-height: 0.1;font-weight: bold;">Safety Automated Medical Control System</p>
                     <p align="center"><font size="4px">Интеллектуальная система цифрового автоконтроля<br>применения средств индивидуальной защиты медицинского персонала<br></font></p>
                     <p align="center"></p>""")
 
