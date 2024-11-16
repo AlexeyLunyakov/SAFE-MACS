@@ -1,8 +1,11 @@
-import gradio as gr
-import webbrowser, os
+import os
+import uuid
 import time
-import plotly.express as px
+import gradio as gr
 import pandas as pd
+import webbrowser, os
+import plotly.express as px
+
 from processing import *
 
 filepath="./files/"
@@ -48,22 +51,48 @@ def info_req():
 def info_res():
     gr.Info("Посмотреть обработанные файлы можно, нажав на кнопку ниже")
 
-def photoProcessing(file, ):
+def shorten_filename(filename, max_length):
+    """Сокращение имени файла до max_length символов и добавление «...» в конец"""
+    if len(filename) > max_length:
+        return filename[:max_length] + '...'
+    return filename
+
+def photoProcessing(files, ):
     time.sleep(1)
-    print(file)
-    if file is not None:
+    if files is not None:
         info_req()
-        detections_list = ppe_detection(file, './files/detections.jpg')
-        class_names = detections_list.data['class_name']
-        confidences = detections_list.confidence
+        
+        folder_name = str(uuid.uuid4())
+        output_folder = os.path.join('./files', folder_name)
+        os.makedirs(output_folder, exist_ok=True)
+
+        detections_files = []
+        df = pd.DataFrame(columns=['file_name', 'class_name', 'confidence'])
         pd.set_option('display.precision', 3)
-        df = pd.DataFrame({
-            'class_name': class_names,
-            'confidence': confidences
-        })
-        df['confidence'] = df['confidence'].astype('float64').round(3)
+        
+        for elem in files:
+            
+            filename, _ = os.path.splitext(elem.split('\\')[-1])
+            dfilename = os.path.join(output_folder, f'd_{filename}.jpg')
+            detections_files.append(dfilename)
+            
+            detections_list = ppe_detection(elem, dfilename)
+            img_class_names = detections_list.data['class_name']
+            img_detections = detections_list.confidence
+            
+            for class_name, confidence in zip(img_class_names, img_detections):
+                new_row = pd.DataFrame({
+                    'file_name': [shorten_filename(filename, 10)],
+                    'class_name': [class_name],
+                    'confidence': [round(float(confidence), 3)]
+                })
+                df = pd.concat([df, new_row], ignore_index=True)
+
+        detections_file_path = os.path.join(output_folder, 'detections.txt')
+        df.to_csv(detections_file_path, sep='\t', index=False)
+        
         info_res()
-        return './files/detections.jpg', df
+        return detections_files, df
     else:
         warning_file()
         return None, None
@@ -136,7 +165,7 @@ with gr.Blocks(theme=light_theme, css=custom_css) as demo:
     with gr.Row():
         with gr.Column():
             with gr.Tab('Распознавание PPE по фотографии'):
-                file_photo = gr.File(label="Фотография", file_types=['.png','.jpeg','.jpg'])
+                files_photo = gr.File(label="Фотография", file_types=['.png','.jpeg','.jpg'], file_count='multiple')
                 with gr.Column():
                     with gr.Row():
                         btn_photo = gr.Button(value="Начать распознавание",)
@@ -144,14 +173,14 @@ with gr.Blocks(theme=light_theme, css=custom_css) as demo:
                 with gr.Row():
                         with gr.Row('Результат обработки'):
                             with gr.Column():
-                                predictImage = gr.Image(type="pil", label="Предсказание модели")
+                                predictImage = gr.Gallery(type="filepath", label="Предсказание модели", columns=[2], rows=[1], preview=True, allow_preview=True, object_fit="contain", height="auto")
                             with gr.Column():
                                 gr.Markdown("""<p align="start"><font size="4px">Что происходит в данном блоке?<br></p>
                                             <ul><font size="3px">
                                             <li>Детекция СИЗ медицинского персонала;</li>
                                             <li>Найденные классы СИЗ медицинского персонала и уверенность модели (слева-направо);</li>
                                             </ul></font>""")
-                                predictImageClass = gr.DataFrame(label="Полученные классы", headers=["Class Name", "Confidence"])
+                                predictImageClass = gr.DataFrame(label="Полученные классы", headers=["Image Name","Class Name", "Confidence"], max_height=380, elem_id='dataframe')
             with gr.Tab('Трекинг PPE по видео'):
                 file_video = gr.File(label="Видео", file_types=['.mp4','.mkv'])
                 with gr.Column():
@@ -166,16 +195,41 @@ with gr.Blocks(theme=light_theme, css=custom_css) as demo:
                                                         
     with gr.Row(): 
         with gr.Row(): 
-            clr_btn = gr.ClearButton([file_photo, predictImage, predictImageClass, ], value="Очистить контекст",)
+            clr_btn = gr.ClearButton([files_photo, predictImage, predictImageClass, ], value="Очистить контекст",)
             btn2 = gr.Button(value="Посмотреть файлы",)
     
     with gr.Row():
         gr.Markdown("""<p align="center">Выполнил Луняков Алексей, студент ИКБО-04-21</p>""")
 
-    btn_photo.click(photoProcessing, inputs=[file_photo, ], outputs=[predictImage, predictImageClass,])
+    btn_photo.click(photoProcessing, inputs=[files_photo, ], outputs=[predictImage, predictImageClass,])
     btn_video.click(videoProcessing, inputs=[file_video, ], outputs=[predictVideo, predictVideoClass,])
     btn2.click(fileOpen)
     triggerImage.click(info_fn)
     triggerVideo.click(info_fn)
 
 demo.launch(allowed_paths=["/assets/"])
+
+
+'''
+if files is not None:
+        info_req()
+        filenames, class_names, confidences = [], [], []
+        df = pd.DataFrame({
+            'file_name': filenames,
+            'class_name': class_names,
+            'confidence': confidences
+        })
+        pd.set_option('display.precision', 3)
+        for elem in files:
+            filename, file_extension = os.path.splitext(elem.split('\\')[-1])
+            filenames.append(filename)
+            detections_list = ppe_detection(elem, f'./files/d_{filename}.jpg')
+            img_class_names = detections_list.data['class_name']
+            img_detections = detections_list.confidence
+            class_names.append(img_class_names)
+            confidences.append(img_detections)
+            
+        df['confidence'] = df['confidence'].astype('float64').round(3)
+        info_res()
+        return files, df
+'''
