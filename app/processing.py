@@ -1,37 +1,34 @@
 import cv2
 import cv2_processor
 
-from ultralytics import YOLO
 from PIL import Image
+from ultralytics import YOLO
+from collections import defaultdict
 import torch.nn.functional as F
 
 import supervision as sv
 import csv
 
 model = YOLO('./yolo11m_20.pt')
-
+# model = YOLO('./rtdetrl_10.pt')
 
 # ----------------------------- image processing -----------------------------
 
-def ppe_detection(source: str, result_name: str, annotated_mode: bool=False) -> None:
+def ppe_detection(source: str, result_name: str, conf_threshold: float=0.4) -> None:
     """
-    Получение предсказания YOLO по входной фотографии
+    Получение предсказания модели по входной фотографии
     :параметр source: путь до оригинального файла (строка)
     :параметр result_name: путь до нового файла (строка)
-    :параметр annotated_mode: переход в режим аннотации лейблов (булевое значение)
     :return: лист предсказанний модели в формате supervision
     """
+    # # YOLO
     yolo_predict = model(source)[0]
-    
-    if annotated_mode:
-        with open(source.split('.')[0] + '.txt', mode='w') as label_file:
-            for bbox in yolo_predict.boxes:
-                class_bbox = str(int(bbox.cls.cpu().item()))
-                coordinates_bbox = ' '.join([str(el) for el in bbox.xywhn.cpu().tolist()[0]])
-                label_file.write(class_bbox + ' ' + coordinates_bbox + '\n')
+    yolo_predict.boxes[yolo_predict.boxes.conf >= conf_threshold]
 
     detections = sv.Detections.from_ultralytics(yolo_predict)
-    # print(yolo_predict)
+    mask = detections.confidence >= conf_threshold
+    detections = detections[mask]
+
     label_annotator = sv.LabelAnnotator(text_color=sv.Color.BLACK)
     bounding_box_annotator = sv.BoxAnnotator()
     annotated_image = cv2.imread(source)
@@ -40,7 +37,6 @@ def ppe_detection(source: str, result_name: str, annotated_mode: bool=False) -> 
     cv2.imwrite(result_name, annotated_image)
    
     return detections
-
 
 # ----------------------------- video processing -----------------------------
 

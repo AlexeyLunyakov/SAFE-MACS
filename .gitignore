@@ -166,3 +166,4 @@ cython_debug/
 *.pt
 *.jpg
 detections.txt
+detections.csv

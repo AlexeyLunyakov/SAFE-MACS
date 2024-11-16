@@ -8,7 +8,7 @@ import plotly.express as px
 
 from processing import *
 
-filepath="./files/"
+filepath = "./files/"
 
 light_theme = gr.themes.Monochrome(
     primary_hue="teal",
@@ -57,6 +57,9 @@ def shorten_filename(filename, max_length):
         return filename[:max_length] + '...'
     return filename
 
+def fileOpen():
+    webbrowser.open(os.path.realpath(str(newfolder)))
+
 def photoProcessing(files, ):
     time.sleep(1)
     if files is not None:
@@ -64,6 +67,8 @@ def photoProcessing(files, ):
         
         folder_name = str(uuid.uuid4())
         output_folder = os.path.join('./files', folder_name)
+        global newfolder 
+        newfolder = output_folder
         os.makedirs(output_folder, exist_ok=True)
 
         detections_files = []
@@ -82,14 +87,16 @@ def photoProcessing(files, ):
             
             for class_name, confidence in zip(img_class_names, img_detections):
                 new_row = pd.DataFrame({
-                    'file_name': [shorten_filename(filename, 10)],
+                    'file_name': [filename],
                     'class_name': [class_name],
                     'confidence': [round(float(confidence), 3)]
                 })
                 df = pd.concat([df, new_row], ignore_index=True)
-
-        detections_file_path = os.path.join(output_folder, 'detections.txt')
+        
+        detections_file_path = os.path.join(output_folder, 'detections.csv')
         df.to_csv(detections_file_path, sep='\t', index=False)
+
+        df['file_name'] = df['file_name'].apply(lambda x: shorten_filename(x, 10))
         
         info_res()
         return detections_files, df
@@ -142,9 +149,6 @@ function toggleTheme() {
 }
 """
 
-def fileOpen():
-    webbrowser.open(os.path.realpath(filepath))
-   
 output = [gr.Dataframe(row_count = (4, "dynamic"), col_count=(4, "fixed"), label="Predictions")]
 
 with gr.Blocks(theme=light_theme, css=custom_css) as demo:
@@ -173,7 +177,7 @@ with gr.Blocks(theme=light_theme, css=custom_css) as demo:
                 with gr.Row():
                         with gr.Row('Результат обработки'):
                             with gr.Column():
-                                predictImage = gr.Gallery(type="filepath", label="Предсказание модели", columns=[2], rows=[1], preview=True, allow_preview=True, object_fit="contain", height="auto")
+                                predictImage = gr.Gallery(type="filepath", label="Предсказание модели", columns=[2], rows=[1], preview=True, allow_preview=True, object_fit="contain", height=500)
                             with gr.Column():
                                 gr.Markdown("""<p align="start"><font size="4px">Что происходит в данном блоке?<br></p>
                                             <ul><font size="3px">
