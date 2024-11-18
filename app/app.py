@@ -10,7 +10,7 @@ filepath="./files/"
 light_theme = gr.themes.Monochrome(
     primary_hue="teal",
     secondary_hue="emerald",
-    neutral_hue="gray",
+    neutral_hue="slate",
     text_size="lg",
     spacing_size="lg",
     font=[gr.themes.GoogleFont('JetBrains Mono'), gr.themes.GoogleFont('Limelight'), 'system-ui', 'sans-serif'],
@@ -22,12 +22,12 @@ light_theme = gr.themes.Monochrome(
 )
 
 dark_theme = gr.themes.Monochrome(
-    primary_hue="green",
-    secondary_hue="lime",
+    primary_hue="teal",
+    secondary_hue="emerald",
+    neutral_hue="slate",
     text_size="lg",
     spacing_size="lg",
     font=[gr.themes.GoogleFont('Inter'), gr.themes.GoogleFont('Limelight'), 'system-ui', 'sans-serif'],
-    neutral_hue="gray",
 ).set(
     block_radius='*radius_xxl',
     button_large_radius='*radius_xl',
