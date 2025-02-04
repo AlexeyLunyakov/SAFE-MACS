@@ -165,5 +165,7 @@ cython_debug/
 /runs
 *.pt
 *.jpg
+*.mp4
+*.mp4v
 detections.txt
 detections.csv

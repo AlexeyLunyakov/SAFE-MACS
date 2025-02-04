@@ -127,7 +127,7 @@ def photoProcessing(files, ):
                 df = pd.concat([df, new_row], ignore_index=True)
         
         detections_file_path = os.path.join(output_folder, 'detections.csv')
-        df.to_csv(detections_file_path, sep='\t', index=False)
+        df.to_csv(detections_file_path, sep=',', index=False)
         
         # Красивый вывод имен файлов
         df['file_name'] = df['file_name'].apply(lambda x: shorten_filename(x, 10))
@@ -150,16 +150,24 @@ def videoProcessing(file, ):
     time.sleep(1)
     if file is not None:
         info_req()
-        process_video(source=file, destination='result.mp4')
+        
+        folder_name = str(uuid.uuid4())
+        output_folder = os.path.join('./files', folder_name)
+        global newfolder 
+        newfolder = output_folder
+        os.makedirs(output_folder, exist_ok=True)
+        
+        filename, _ = os.path.splitext(file.split('\\')[-1])
+        dfilename = os.path.join(output_folder, f'd_{filename}.mp4v')
+        dcsvfilename = os.path.join(output_folder, 'detections.csv')
+        print(dfilename)
+
+        video_ppe_detection(source=file, result_name=dfilename, output_folder=output_folder)
         info_res()
-        with open('detections.csv', mode='r') as detect_file:
-            string = detect_file.readlines()
-        full_text = ''
-        for el in string:
-            el = el.replace('\n', '')
-            data = el.split(',')
-            full_text += 'Начало интервала: ' + data[0] + '; Конец интервала: ' + data[1] + '; Количество встреченных СИЗ: ' + data[2] + '\n'
-        return 'result.mp4', full_text
+        
+        df = pd.read_csv(dcsvfilename)
+        
+        return dfilename, df
     else:
         warning_file()
         return None, None, None
@@ -249,40 +257,53 @@ with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns) as demo:
 
     with gr.Row():
         with gr.Column():
-            with gr.Tab('Распознавание PPE по фотографии'):
-                files_photo = gr.File(label="Фотография", file_types=['.png','.jpeg','.jpg'], file_count='multiple')
+            # gr.Markdown("""<p align="start"><font size="4px">Детекция PPE<br></font></p>""")
+            with gr.Tab('Изображение'):
+                files_photo = gr.File(label="Загрузите ваши файлы здесь", file_types=['.png','.jpeg','.jpg'], file_count='multiple')
                 with gr.Column():
                     with gr.Row():
                         btn_photo = gr.Button(value="Начать распознавание",)
                         triggerImage = gr.Button(value="Подробнее",)
                 with gr.Row():
-                        with gr.Row('Результат обработки'):
-                            with gr.Column():
+                        with gr.Row('Результат обработки', equal_height=True):
+                            with gr.Column(variant='panel',):
                                 predictImage = gr.Gallery(type="filepath", label="Предсказание модели", columns=[2], rows=[1], preview=True, allow_preview=True, object_fit="contain", height=500)
                                 # statsDF = gr.DataFrame(headers=['Статистика по классам'],)
-                                statsPLOT = gr.Plot(label='tmp', elem_id='stats-plot', container=True)
+                                statsPLOT = gr.Plot(label='Распределение найденных классов', elem_id='stats-plot', container=True)
                             with gr.Column():
                                 gr.Markdown("""<p align="start"><font size="4px">Что происходит в данном блоке?<br></p>
                                             <ul><font size="3px">
-                                            <li>Детекция СИЗ медицинского персонала;</li>
-                                            <li>Найденные классы СИЗ медицинского персонала и уверенность модели (слева-направо);</li>
+                                            <li>Загрузка изображений для проверки;</li>
+                                            <li>Обработка этих изображений моделью;</li>
+                                            <li>Создание файлов результатов детекции в уникальной папке;</li>
+                                            <li>Вывод интерактивной инфографики по каждому из изображений;</li>
+                                            <li>Фиксирование СИЗ и уверенности модели в таблице для всех изображений;</li>
                                             </ul></font>""")
-                                predictImageClass = gr.DataFrame(headers=["Полученные классы"], max_height=380, elem_id='dataframe')
-            with gr.Tab('Трекинг PPE по видео'):
-                file_video = gr.File(label="Видео", file_types=['.mp4','.mkv'])
+                                predictImageClass = gr.DataFrame(headers=["Результаты обработки"], elem_id='dataframe')
+            with gr.Tab('Видео'):
+                file_video = gr.File(label="Загрузите ваши файлы здесь", file_types=['.mp4','.mkv'], file_count = 'single')
                 with gr.Column():
                     with gr.Row(): 
                         btn_video = gr.Button(value="Начать распознавание",)
                         triggerVideo = gr.Button(value="Подробнее",)
-                with gr.Row():
-                    with gr.Tab('Результат обработки'):
-                        with gr.Row():
-                            predictVideo = gr.Video(label="Обработанное видео", interactive=False)
-                            predictVideoClass = gr.Textbox(label="Результат обработки", placeholder="Здесь будут общие данные по файлу", interactive=False, lines=7)
+                with gr.Row(equal_height=True):
+                    with gr.Column(variant='panel',):
+                        predictVideo = gr.Video(label="Обработанное видео", interactive=False)
+                        statsPLOT = gr.Plot(label='Сделать график время-класс', elem_id='stats-plot-2', container=True)
+                    with gr.Column():
+                        gr.Markdown("""<p align="start"><font size="4px">Что происходит в данном блоке?<br></p>
+                                    <ul><font size="3px">
+                                    <li>Загрузка видео для проверки;</li>
+                                    <li>Обработка вашего видео моделью;</li>
+                                    <li>Создание файлов результатов детекции в уникальной папке;</li>
+                                    <li>Вывод интерактивной инфографики для найденных классов СИЗ;</li>
+                                    <li>Фиксирование СИЗ и уверенности модели в таблице с таймингами;</li>
+                                    </ul></font>""")
+                        predictVideoClass = gr.DataFrame(headers=["Результаты обработки"], elem_id='dataframe')
                                                         
     with gr.Row(): 
         with gr.Row(): 
-            clr_btn = gr.ClearButton([files_photo, predictImage, predictImageClass, statsPLOT], value="Очистить контекст",)
+            clr_btn = gr.ClearButton([files_photo, predictImage, predictImageClass, statsPLOT, file_video, predictVideo, predictVideoClass], value="Очистить контекст",)
             btn2 = gr.Button(value="Посмотреть файлы",)
     
     with gr.Row():
