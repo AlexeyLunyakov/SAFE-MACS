@@ -6,91 +6,114 @@
   </p>
 
   <p align="center">
-    <p><strong>Приложение для цифрового автоконтроля применения СИЗ медицинского персонала с помощью компьютерного зрения.</strong></p>
+    <p><strong>Application for digital automatic control of the use of PPE for medical personnel using computer vision.</strong></p>
     <br /><br />
   </p>
 </div>
 
-**Содержание:**
-- [Проблематика](#title1)
-- [Описание решения](#title2)
-- [Тестирование решения](#title3)
-- [Обновления](#title4)
+<center>
 
-## <h3 align="start"><a id="title1">Проблематика</a></h3> 
-Необходимо создать, с применением технологий искусственного интеллекта, MVP в виде программного решения для автоматического контроля применения средств индивидуальной защиты (СИЗ) медицинским персоналом.
+**Contents** |
+:---:|
+[Abstract](#title1) |
+[Analog Analysis](#title2) |
+[Description](#title3) |
+[Testing and Deployment](#title4) |
+[Updates](#title5) |
 
-Решение может использоваться для:
-* автоматизации процесса мониторинга соблюдения норм безопасности в медицинских учреждениях;
-* оптимизации бизнес-процессов в сфере медицинской логистики и управления персоналом.
+</center>
 
-В задаче рассматривается работа с реальными изображениями медицинских работников в рабочей обстановке, поэтому решение включает несколько ключевых задач обучения моделей:
-* точное определение наличия и корректности использования СИЗ на изображении;
-* идентификация типов СИЗ (маски, перчатки, халаты и др.) с помощью моделей компьютерного зрения.
+## <h3 align="start"><a id="title1">Abstract</a></h3> 
+**In response to the need for enhanced safety measures in healthcare, a solution was developed to automate the monitoring of personal protective equipment (PPE) use by healthcare personnel.**
+
+The relevance of this topic is associated with the disappointing statistics of the increase in morbidity during the COVID-19 pandemic, when the lack of a modern solution in the field of human health safety led to monstrous consequences. The rapid spread of infectious diseases, especially those transmitted through contact, due to a lack of adequate control, highlights the need to protect both patients and healthcare workers through innovative non-invasive methods.
+
+**The developed solution can be used to:**
+* automate the process of monitoring compliance with safety regulations in healthcare facilities;
+* optimize business processes in the field of medical logistics and HR management.
+
+**The task involves working with real images of medical workers in a working environment, so the solution includes several key tasks for training models:**
+* accurate determination of the presence of PPE on a person and warning about its absence;
+* identification of the presence of important types of PPE necessary to protect exposed areas of skin, respiratory tract, eyes, including: Coveralls, Face Shields, Gloves, Goggles and Masks.
 
 
-<p align="right">(<a href="#readme-top"><i>Вернуться наверх</i></a>)</p>
+<p align="right">(<a href="#readme-top"><i>Back to top</i></a>)</p>
 
-## <h3 align="start"><a id="title2">Описание решения</a></h3>
+## <h3 align="start"><a id="title2">Analog Analysis</a></h3>
 
-**Machine Learning:**
+After conducting a preliminary analysis of analogues, it was revealed that there are no complete analogues of the developed system, however, the following methods of monitoring the wearing of PPE in medical institutions exist:
+- **Local visual monitoring**, the disadvantages of which are the human factor, significant time costs;
+- **Analysis using a single observer and video surveillance systems**, the obvious disadvantages of which are the high cost of maintenance, as well as low efficiency due to the presence of a person;
+- **Pre-trained models for monitoring masks** on the street and in public places, developed mainly during the COVID pandemic.
 
-[![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white)](https://pytorch.org/)
+<p align="right">(<a href="#readme-top"><i>Back to top</i></a>)</p>
 
- - **Использованные модели:**
-    - **```Object Detection```**:
-      - ultralytics/YOLOv11;
-    - **```Object Classification```**:
-      - ultralytics/YOLOv11 (но здесь будет что-то другое, честно);
+## <h3 align="start"><a id="title3">Description</a></h3>
 
-**Обоснование выбора моделей:**
-* здесь
-* будет
-* обоснование
-* но
-* позже
+<h4 align="start"><a>FrontEnd & BackEnd</a></h4>
 
-Ссылки на репозитории моделей:
-   - [YOLOv11](https://github.com/ultralytics/ultralytics)
+**Gradio** was chosen as the main application development stack, as it provides the solution with:
+- Cross-platform, easy deployment right out of the box;
+- Variability of analysis of the obtained data due to integration with pandas, numpy and others;
+- Easy scaling of the system for growing data volumes;
+- Quick replacement of deep learning models if necessary;
+
+[![Gradio Badge](https://img.shields.io/badge/Gradio-F97316?logo=gradio&logoColor=fff&style=flat-square)](https://www.gradio.app)
+
+<h4 align="start"><a>Machine Learning</a></h4>
+
+The future architecture of the system was chosen to be an ensemble of **YOLOv11** model as a detector and the introduction of an additional model (EfficientNet or similar) as a classifier of objects of interest. 
+
+> *During the design of the system, other models were also trained (RT-DETR, CLIP), so in the final version, the user was provided with a choice of models in the user interface. Model training, as well as weights, which GitHub allows place, are located in the corresponding directories.* 
+
+[![Python Badge](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff&style=flat-square)](https://www.python.org/)
+[![PyTorch Badge](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=fff&style=flat-square)](https://pytorch.org/)
+
+**Object Detection & Classification**:
+  - ultralytics/YOLOv11-M;
+  - Baidu/RT-DETR-L;
+  - new pipelines (cooming soon);
+
+**Repos links**
+Model | Page |
+:---:|:---:|
+YOLOv11 | [![Ultralytics Badge](https://img.shields.io/badge/Ultralytics-111F68?logo=ultralytics&logoColor=fff&style=flat-square)](https://github.com/ultralytics/ultralytics) |
+RT-DETR | [![Baidu Badge](https://img.shields.io/badge/Baidu-2932E1?logo=baidu&logoColor=fff&style=flat-square)](https://github.com/lyuwenyu/RT-DETR) |
+
+
   
-<p align="right">(<a href="#readme-top"><i>Вернуться наверх</i></a>)</p>
+<p align="right">(<a href="#readme-top"><i>Back to top</i></a>)</p>
 
 
-
-## <h3 align="start"><a id="title3">Тестирование решения</a></h3> 
-
-Данный репозиторий предполагает следующую конфигурацию тестирования решения:
-
-  **```Gradio + ML-models;```**
+## <h3 align="start"><a id="title4">Testing and Deployment</a></h3> 
 
   <br />
 
 <details>
-  <summary> <strong><i> Тестирование моделей с минимальным приложением на Gradio:</i></strong> </summary>
+  <summary> <strong><i> Testing models with a minimal app on Gradio:</i></strong> </summary>
   
-  - В Visual Studio Code (**Windows-PowerShell recommended**) через терминал последовательно выполнить следующие команды:
+  - In Visual Studio Code (**Windows-PowerShell recommended**) through the terminal, run the following commands sequentially:
 
-    - Клонирование репозитория:
+    - Clone the repository:
     ```
     git clone https://github.com/AlexeyLunyakov/SAFE-MACS.git
     ```
-    - Создание и активация виртуального окружения:
+    - Creating and activating a virtual environment:
     ```
     cd ./SAFE-MACS
     python -m venv .venv
     .venv\Scripts\activate
     ```
-    - Уставновка зависимостей (CUDA 12.4 required):
+    - Installing dependencies (CUDA 12.4 required):
     ```
     pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
     pip3 install -r requirements.txt
     ```
-    - После установки зависимостей (3-5 минут) можно запустить Gradio:
+    - After installing the dependencies (3-5 minutes), you can run Gradio:
     ```
     python ./app/app.py
     ```
-    или с возможнностью автоматического перезапуска при возникновении ошибок:
+    or with the ability to automatically restart if errors occur:
     ```
     cd ./app/
     gradio app.py
@@ -98,13 +121,19 @@
 
 </details> 
 
-<p align="right">(<a href="#readme-top"><i>Вернуться наверх</i></a>)</p>
+<p align="right">(<a href="#readme-top"><i>Back to top</i></a>)</p>
 
-## <h3 align="start"><a id="title4">Обновления</a></h3> 
+## <h3 align="start"><a id="title5">Updates</a></h3> 
 
-***Все обновления и нововведения будут размещаться здесь!***
+***TODO list***
+TODO | WIP | DONE |
+--- |:---:|:---:|
+selection of models and approaches (and their use based on the server configuration where the solution is deployed) | &#x2611; | &#x2610; | 
+optimization and quantization of the solution for use on mobile devices and low-power configurations | &#x2611; | &#x2610; | 
+integration of the database and multi-threaded processing of images, video, streams for full integration into the real conditions of a large room | &#x2610; | &#x2610; | 
+CLIP, CLIP+EfficientNet, YOLO+CLIP and others | &#x2611; | &#x2610; | 
 
-<p align="right">(<a href="#readme-top"><i>Вернуться наверх</i></a>)</p>
+<p align="right">(<a href="#readme-top"><i>Back to top</i></a>)</p>
 
 
 <a name="readme-top"></a>
