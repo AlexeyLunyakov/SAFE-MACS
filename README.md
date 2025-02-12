@@ -30,7 +30,7 @@ The relevance of this topic is associated with the disappointing statistics of t
 
 **The developed solution can be used to:**
 * automate the process of monitoring compliance with safety regulations in healthcare facilities;
-* optimize business processes in the field of medical logistics and HR management.
+* optimize business processes in the field of medical logistics and personnel management.
 
 **The task involves working with real images of medical workers in a working environment, so the solution includes several key tasks for training models:**
 * accurate determination of the presence of PPE on a person and warning about its absence;
@@ -53,10 +53,10 @@ After conducting a preliminary analysis of analogues, it was revealed that there
 <h4 align="start"><a>FrontEnd & BackEnd</a></h4>
 
 **Gradio** was chosen as the main application development stack, as it provides the solution with:
-- Cross-platform, easy deployment right out of the box;
-- Variability of analysis of the obtained data due to integration with pandas, numpy and others;
 - Easy scaling of the system for growing data volumes;
+- Cross-platform, easy deployment right out of the box;
 - Quick replacement of deep learning models if necessary;
+- Variability of data analysis with pandas, numpy and others;
 
 [![Gradio Badge](https://img.shields.io/badge/Gradio-F97316?logo=gradio&logoColor=fff&style=flat-square)](https://www.gradio.app)
 
@@ -64,24 +64,20 @@ After conducting a preliminary analysis of analogues, it was revealed that there
 
 The future architecture of the system was chosen to be an ensemble of **YOLOv11** model as a detector and the introduction of an additional model (EfficientNet or similar) as a classifier of objects of interest. 
 
-> *During the design of the system, other models were also trained (RT-DETR, CLIP), so in the final version, the user was provided with a choice of models in the user interface. Model training, as well as weights, which GitHub allows place, are located in the corresponding directories.* 
+> *During the design of the system, other models were also trained (RT-DETR, CLIP), so in the final version, the user was provided with a choice of pipelines in the user interface. Model training, as well as weights, which GitHub allows place, are located in the corresponding directories.* 
 
 [![Python Badge](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff&style=flat-square)](https://www.python.org/)
 [![PyTorch Badge](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=fff&style=flat-square)](https://pytorch.org/)
 
 **Object Detection & Classification**:
-  - ultralytics/YOLOv11-M;
-  - Baidu/RT-DETR-L;
-  - new pipelines (cooming soon);
 
-**Repos links**
 Model | Page |
 :---:|:---:|
-YOLOv11 | [![Ultralytics Badge](https://img.shields.io/badge/Ultralytics-111F68?logo=ultralytics&logoColor=fff&style=flat-square)](https://github.com/ultralytics/ultralytics) |
-RT-DETR | [![Baidu Badge](https://img.shields.io/badge/Baidu-2932E1?logo=baidu&logoColor=fff&style=flat-square)](https://github.com/lyuwenyu/RT-DETR) |
+ultralytics/YOLOv11-M | [![Ultralytics Badge](https://img.shields.io/badge/Ultralytics-111F68?logo=ultralytics&logoColor=fff&style=flat-square)](https://github.com/ultralytics/ultralytics) |
+Baidu/RT-DETR-L | [![Baidu Badge](https://img.shields.io/badge/Baidu-2932E1?logo=baidu&logoColor=fff&style=flat-square)](https://github.com/lyuwenyu/RT-DETR) |
+new pipelines | &#x2610; |
+coming soon | &#x2610; |
 
-
-  
 <p align="right">(<a href="#readme-top"><i>Back to top</i></a>)</p>
 
 
@@ -90,7 +86,7 @@ RT-DETR | [![Baidu Badge](https://img.shields.io/badge/Baidu-2932E1?logo=baidu&l
   <br />
 
 <details>
-  <summary> <strong><i> Testing models with a minimal app on Gradio:</i></strong> </summary>
+  <summary> <strong><i>Testing models with an app on Gradio:</i></strong> </summary>
   
   - In Visual Studio Code (**Windows-PowerShell recommended**) through the terminal, run the following commands sequentially:
 
@@ -129,9 +125,9 @@ RT-DETR | [![Baidu Badge](https://img.shields.io/badge/Baidu-2932E1?logo=baidu&l
 TODO | WIP | DONE |
 --- |:---:|:---:|
 selection of models and approaches (and their use based on the server configuration where the solution is deployed) | &#x2611; | &#x2610; | 
-optimization and quantization of the solution for use on mobile devices and low-power configurations | &#x2611; | &#x2610; | 
-integration of the database and multi-threaded processing of images, video, streams for full integration into the real conditions of a large room | &#x2610; | &#x2610; | 
-CLIP, CLIP+EfficientNet, YOLO+CLIP and others | &#x2611; | &#x2610; | 
+optimization and quantization of the solution for use on mobile devices and low-power configurations (ZEUS, ONNX, TensorRT) | &#x2611; | &#x2610; | 
+integration of the database and multi-threaded processing of images, video, streams for full integration into the real conditions | &#x2610; | &#x2610; | 
+models integration: CLIP, CLIP+EfficientNet, YOLO+CLIP and other ensembles | &#x2611; | &#x2610; | 
 
 <p align="right">(<a href="#readme-top"><i>Back to top</i></a>)</p>
 
