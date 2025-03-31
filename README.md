@@ -107,7 +107,8 @@ coming soon | &#x2610; |
     ```
     - After installing the dependencies (3-5 minutes), you can run Gradio:
     ```
-    python ./app/app.py
+    cd ./app/
+    python ./app.py
     ```
     or with the ability to automatically restart if errors occur:
     ```

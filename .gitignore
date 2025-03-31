@@ -169,3 +169,5 @@ cython_debug/
 *.mp4v
 detections.txt
 detections.csv
+
+.?venv

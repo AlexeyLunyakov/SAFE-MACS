@@ -344,9 +344,19 @@ theme_btns = """
         }
     }
 """
+"""
+Для результатов обработки - переделать таблицу данных
+Формат:
 
+Фотография    | Найденные классы | Количество
+img_20302.png | Coverall         | 2
+              | Face_Shield      | 1
+              | Googles          | 0
+              | Gloves           | 4
+              | Mask             | 2
+"""
 
-with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns) as demo:
+with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns, title='SAFE-MACS') as demo:
 
     toggle_button = gr.Button("☾", elem_id='theme-toggle')
     toggle_button.click(fn=None, inputs=None, outputs=None, js=theme('dark'))
@@ -364,12 +374,12 @@ with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns) as demo:
             with gr.Tab('Изображение'):
                 with gr.Row(equal_height=True):
                     files_photo = gr.File(label="Загрузите ваши файлы здесь", file_types=['.png','.jpeg','.jpg'], file_count='multiple', scale=7)
-                    cv_model_img = gr.Radio(["RT-DETR-L", "YOLOv11-M"], label="Модель", scale=1, type='index')
+                    cv_model_img = gr.Radio(["YOLOv11-X", "RT-DETR-L",], value="YOLOv11-X", label="Модель", scale=1, type='index')
                 with gr.Column():
                     with gr.Row():
                         btn_photo = gr.Button(value="Начать распознавание",)
                         tmp = 'end'
-                        InfoImage = gr.Button(value="Подробнее")
+                        basic_info = gr.Button(value="Инфо",visible=True)
                 with gr.Row():
                         with gr.Row('Результат обработки', equal_height=True):
                             with gr.Column(variant='panel',):
@@ -388,7 +398,7 @@ with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns) as demo:
             with gr.Tab('Видео'):
                 with gr.Row(equal_height=True):
                     file_video = gr.File(label="Загрузите ваши файлы здесь", file_types=['.mp4','.mkv'], file_count = 'single', scale=7)
-                    cv_model_vid = gr.Radio(["RT-DETR-L", "YOLOv11-M"], label="Модель", scale=1, type='index')
+                    cv_model_vid = gr.Radio(["YOLOv11-X", "RT-DETR-L",], value="YOLOv11-X", label="Модель", scale=1, type='index')
                 with gr.Column():
                     with gr.Row(): 
                         btn_video = gr.Button(value="Начать распознавание",)
@@ -410,16 +420,16 @@ with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns) as demo:
                                                         
     with gr.Row(): 
         with gr.Row(): 
-            clr_btn = gr.ClearButton([files_photo, predictImage, predictImageClass, statsPLOT, file_video, predictVideo, predictVideoClass, cv_model_img, cv_model_vid, InfoImage], value="Очистить контекст",)
-            btn2 = gr.Button(value="Посмотреть файлы",)
+            clr_btn = gr.ClearButton([files_photo, predictImage, predictImageClass, statsPLOT, file_video, predictVideo, predictVideoClass, cv_model_img, cv_model_vid], value="Очистить контекст",)
+            data_folder = gr.Button(value="Посмотреть файлы",)
     
     with gr.Row():
-        gr.Markdown("""<p align="center">Выполнил Луняков Алексей, студент ИКБО-04-21</p>""")
+        gr.Markdown("""<p align="center"><a href="https://github.com/AlexeyLunyakov"><nobr>Выполнил Луняков Алексей</nobr></a></p>""")
         
     btn_photo.click(photoProcessing, inputs=[files_photo, cv_model_img], outputs=[predictImage, predictImageClass, statsPLOT,])
     btn_video.click(videoProcessing, inputs=[file_video, cv_model_vid], outputs=[predictVideo, predictVideoClass,])
-    btn2.click(fileOpen)
-    InfoImage.click(inf) 
+    data_folder.click(fileOpen)
+    basic_info.click(inf) 
     InfoVid.click(inf) 
 
 demo.launch(allowed_paths=["/assets/"])

@@ -4,7 +4,8 @@ import csv
 from ultralytics import YOLO, RTDETR
 import supervision as sv
 
-model_1 = YOLO('./yolo11m_20.pt')
+model_1 = YOLO('./yolo11x_100.pt')
+# model_1 = YOLO('./yolo11m_20.pt')
 model_0 = RTDETR('./rtdetrl_10.pt')
 
 # ----------------------------- image processing -----------------------------
