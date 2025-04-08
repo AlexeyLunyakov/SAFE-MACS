@@ -248,9 +248,11 @@ def videoProcessing(file, cv_model):
         os.makedirs(output_folder, exist_ok=True)
         
         filename, _ = os.path.splitext(file.split('\\')[-1])
-        dfilename = os.path.join(output_folder, f'd_{filename}.mp4v')
+        dfilename = os.path.join(output_folder, f'd_{filename}.mp4')
         dcsvfilename = os.path.join(output_folder, 'detections.csv')
 
+        print(dfilename, output_folder)
+        
         video_ppe_detection(source=file, result_name=dfilename, output_folder=output_folder, model_type=cv_model)
         inform('end')
         
@@ -406,21 +408,21 @@ with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns, title='SAFE-MA
                 with gr.Row(equal_height=True):
                     with gr.Column(variant='panel',):
                         predictVideo = gr.Video(label="Обработанное видео", interactive=False)
-                        hz = gr.Plot(label='Сделать график время-класс', elem_id='stats-plot-2', container=True)
+                        # hz = gr.Plot(label='Сделать график время-класс', elem_id='stats-plot-2', container=True)
                     with gr.Column():
                         gr.Markdown("""<p align="start"><font size="4px">Что происходит в данном блоке?<br></p>
                                     <ul><font size="3px">
                                     <li>Загрузка видео для проверки;</li>
                                     <li>Обработка вашего видео моделью;</li>
                                     <li>Создание файлов результатов детекции в уникальной папке;</li>
-                                    <li>Вывод интерактивной инфографики для найденных классов СИЗ;</li>
                                     <li>Фиксирование СИЗ и уверенности модели в таблице с таймингами;</li>
                                     </ul></font>""")
+                        # <li>Вывод интерактивной инфографики для найденных классов СИЗ;</li>
                         predictVideoClass = gr.DataFrame(headers=["Результаты обработки"], elem_id='dataframe')
                                                         
     with gr.Row(): 
         with gr.Row(): 
-            clr_btn = gr.ClearButton([files_photo, predictImage, predictImageClass, statsPLOT, file_video, predictVideo, predictVideoClass, cv_model_img, cv_model_vid], value="Очистить контекст",)
+            clr_btn = gr.ClearButton([files_photo, predictImage, predictImageClass, statsPLOT, file_video, predictVideo, predictVideoClass, ], value="Очистить контекст",)
             data_folder = gr.Button(value="Посмотреть файлы",)
     
     with gr.Row():

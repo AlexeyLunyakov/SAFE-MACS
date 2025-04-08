@@ -48,7 +48,6 @@ def img_ppe_detection(source: str, result_name: str, conf_threshold: float=0.4, 
     annotated_image = bbox_annotator.annotate(scene=annotated_image, detections=detections)
     
     cv2.imwrite(result_name, annotated_image)
-    # print(detections)
     return detections
 
 # ----------------------------- video processing -----------------------------
@@ -130,8 +129,8 @@ def video_ppe_detection(source: str, result_name: str, output_folder: str, conf_
                     class_names = [model_1.names[c_id] for c_id in unique_classes]
                     csv_writer.writerow([timestamp_str, ', '.join(class_names)])
                     last_class_count = current_count
-
-    video.release()
-    result.release()
+        
+        video.release()
+        result.release()
 
 # -------------------------------------------------------------------------------
