@@ -34,8 +34,7 @@ The relevance of this topic is associated with the disappointing statistics of t
 
 **The task involves working with real images of medical workers in a working environment, so the solution includes several key tasks for training models:**
 * accurate determination of the presence of PPE on a person and warning about its absence;
-* identification of the presence of important types of PPE necessary to protect exposed areas of skin, respiratory tract, eyes, including: Coveralls, Face Shields, Gloves, Goggles and Masks.
-
+* identification of the presence of important types of PPE necessary to protect exposed areas of skin, respiratory tract, eyes.
 
 <p align="right">(<a href="#readme-top"><i>Back to top</i></a>)</p>
 
@@ -56,25 +55,53 @@ After conducting a preliminary analysis of analogues, it was revealed that there
 - Easy scaling of the system for growing data volumes;
 - Cross-platform, easy deployment right out of the box;
 - Quick replacement of deep learning models if necessary;
-- Variability of data analysis with pandas, numpy and others;
+- Variability of data analysis with pandas, numpy and others.
 
 [![Gradio Badge](https://img.shields.io/badge/Gradio-F97316?logo=gradio&logoColor=fff&style=flat-square)](https://www.gradio.app)
 
+<h4 align="start"><a>Data Processing</a></h4>
+
+Custom Dataset of 4050 annotated photographs was collected for training computer vision models, augmented with geometric (rotation, scaling) and photometric (lighting adjustment, noise introduction) transformations to improve model robustness.
+
+Priority classes - **Masks, Gloves, and Coveralls** - were identified through visual as well as spatial-frequency analysis of operating room images. However, to improve the robustness of the models, the resulting dataset includes five classes of PPE: **Coveralls, Face Shields, Gloves, Goggles and Masks**.
+
+> You can find this dataset on Roboflow (click on Badge below)
+
+[![Roboflow Badge](https://img.shields.io/badge/Roboflow-6706CE?logo=roboflow&logoColor=fff&style=flat-square)](https://app.roboflow.com/safemacsws/mppe-custom-set/4)
+
+
 <h4 align="start"><a>Machine Learning</a></h4>
 
-The future architecture of the system was chosen to be an ensemble of **YOLOv11** model as a detector and the introduction of an additional model (EfficientNet or similar) as a classifier of objects of interest. 
+Architecture with multiple models has been implemented, allowing dynamic selection between, for example, YOLOv11-L and RT-DETR-L (or ONNX versions) based on deployment requirements. This approach balances detection accuracy and processing speed while minimizing hardware dependencies.
 
 > *During the design of the system, other models were also trained (RT-DETR, CLIP), so in the final version, the user was provided with a choice of pipelines in the user interface. Model training, as well as weights, which GitHub allows place, are located in the corresponding directories.* 
 
 [![Python Badge](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff&style=flat-square)](https://www.python.org/)
 [![PyTorch Badge](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=fff&style=flat-square)](https://pytorch.org/)
 
-**Object Detection & Classification**:
+<h4 align="start"><a>Results</a></h4>
+
+The full testing table can be found [here](https://github.com/AlexeyLunyakov/SAFE-MACS/blob/main/model/results.md)
+
+Model | prms | epochs | F1-w | mAP50 | mAP50-95 |
+--- |:---:|:---:|:---:|:---:|:---:|
+yolo11-l | 25.3 M | 75 | 0.81 at 0.308 | 0.836 | 0.551 |
+rt-detr-v1-l | 32 М | 50 | 0.84 at 0.403 | 0.863 | 0.567 |
+
+
+Model-mAP50 | Coverall | Face_Shield | Gloves | Goggles | Mask |
+--- |:---:|:---:|:---:|:---:|:---:|
+yolo11-l | 0.96 | 0.686 | 0.808 | 0.782 | 0.945 |
+rt-detr-v1-l | 0.954 | 0.72 | 0.859 | 0.826 |0.957 |
+
+Testing has shown high metrics for priority classes with little variance in performance between models under different lighting conditions and number of employees. The configurability of the system allows it to be integrated into existing surveillance infrastructure, providing continuous compliance analytics without the need for specialized equipment.
+
+<h4 align="start"><a>Models and authors</a></h4>
 
 Model | Page |
 :---:|:---:|
-ultralytics/YOLOv11-M | [![Ultralytics Badge](https://img.shields.io/badge/Ultralytics-111F68?logo=ultralytics&logoColor=fff&style=flat-square)](https://github.com/ultralytics/ultralytics) |
-Baidu/RT-DETR-L | [![Baidu Badge](https://img.shields.io/badge/Baidu-2932E1?logo=baidu&logoColor=fff&style=flat-square)](https://github.com/lyuwenyu/RT-DETR) |
+ultralytics/YOLOv11 | [![Ultralytics Badge](https://img.shields.io/badge/Ultralytics-111F68?logo=ultralytics&logoColor=fff&style=flat-square)](https://github.com/ultralytics/ultralytics) |
+Baidu/RT-DETR | [![Baidu Badge](https://img.shields.io/badge/Baidu-2932E1?logo=baidu&logoColor=fff&style=flat-square)](https://github.com/lyuwenyu/RT-DETR) |
 new pipelines | &#x2610; |
 coming soon | &#x2610; |
 
@@ -122,13 +149,13 @@ coming soon | &#x2610; |
 
 ## <h3 align="start"><a id="title5">Updates</a></h3> 
 
-***TODO list***
-TODO | WIP | DONE |
+***ToDo list***
+New feature | WIP | Done |
 --- |:---:|:---:|
 selection of models and approaches (and their use based on the server configuration where the solution is deployed) | &#x2611; | &#x2610; | 
 optimization and quantization of the solution for use on mobile devices and low-power configurations (ZEUS, ONNX, TensorRT) | &#x2611; | &#x2610; | 
 integration of the database and multi-threaded processing of images, video, streams for full integration into the real conditions | &#x2610; | &#x2610; | 
-models integration: CLIP, CLIP+EfficientNet, YOLO+CLIP and other ensembles | &#x2611; | &#x2610; | 
+pipeline integration: CLIP, YOLO+CLIP and others | &#x2611; | &#x2610; | 
 
 <p align="right">(<a href="#readme-top"><i>Back to top</i></a>)</p>
 
