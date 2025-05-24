@@ -161,9 +161,10 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-/data
-/runs
+
 *.pt
+*.pth
+
 *.jpg
 *.mp4
 *.mp4v
@@ -171,3 +172,10 @@ detections.txt
 detections.csv
 
 .?venv
+.?conda
+
+data/
+runs/
+mppe-custom-set-*/
+output_ep*/
+rtdetr-v2-L-mppe-*/
