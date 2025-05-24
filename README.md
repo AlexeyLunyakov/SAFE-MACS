@@ -74,7 +74,7 @@ Priority classes - **Masks, Gloves, and Coveralls** - were identified through vi
 
 Architecture with multiple models has been implemented, allowing dynamic selection between, for example, YOLOv11-L and RT-DETR-L (or ONNX versions) based on deployment requirements. This approach balances detection accuracy and processing speed while minimizing hardware dependencies.
 
-> *During the design of the system, other models were also trained (RT-DETR, CLIP), so in the final version, the user was provided with a choice of pipelines in the user interface. Model training, as well as weights, which GitHub allows place, are located in the corresponding directories.* 
+> *During the design of the system, other models were also trained (RT-DETRv2, RTMDet, RF-DETR), so in the final version, the user was provided with a choice of pipelines in the user interface. Model training, as well as weights, which GitHub allows place, are located in the corresponding directories.* 
 
 [![Python Badge](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff&style=flat-square)](https://www.python.org/)
 [![PyTorch Badge](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=fff&style=flat-square)](https://pytorch.org/)
@@ -87,12 +87,14 @@ Model | prms | epochs | F1-w | mAP50 | mAP50-95 |
 --- |:---:|:---:|:---:|:---:|:---:|
 yolo11-l | 25.3 M | 75 | 0.81 at 0.308 | 0.836 | 0.551 |
 rt-detr-v1-l | 32 М | 50 | 0.84 at 0.403 | 0.863 | 0.567 |
+rf-detr-base | 29 M | 25 | 0.892 at 0.550 | 0.901 | 0.676 |
 
 
 Model-mAP50 | Coverall | Face_Shield | Gloves | Goggles | Mask |
 --- |:---:|:---:|:---:|:---:|:---:|
 yolo11-l | 0.96 | 0.686 | 0.808 | 0.782 | 0.945 |
 rt-detr-v1-l | 0.954 | 0.72 | 0.859 | 0.826 |0.957 |
+rf-detr-base | 0.967 | 0.888 | 0.896 | 0.801 | 0.955 |
 
 Testing has shown high metrics for priority classes with little variance in performance between models under different lighting conditions and number of employees. The configurability of the system allows it to be integrated into existing surveillance infrastructure, providing continuous compliance analytics without the need for specialized equipment.
 
@@ -102,6 +104,8 @@ Model | Page |
 :---:|:---:|
 ultralytics/YOLOv11 | [![Ultralytics Badge](https://img.shields.io/badge/Ultralytics-111F68?logo=ultralytics&logoColor=fff&style=flat-square)](https://github.com/ultralytics/ultralytics) |
 Baidu/RT-DETR | [![Baidu Badge](https://img.shields.io/badge/Baidu-2932E1?logo=baidu&logoColor=fff&style=flat-square)](https://github.com/lyuwenyu/RT-DETR) |
+Roboflow/RF-DETR | [![Roboflow Badge](https://img.shields.io/badge/Roboflow-6706CE?logo=roboflow&logoColor=fff&style=flat-square)](https://github.com/roboflow/rf-detr) |
+open-mmlab/RTMDet | [![Github Badge](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=fff&style=flat-square)](https://github.com/open-mmlab/mmdetection/tree/main/configs/rtmdet) |
 new pipelines | &#x2610; |
 coming soon | &#x2610; |
 
