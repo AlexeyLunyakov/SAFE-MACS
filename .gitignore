@@ -179,3 +179,5 @@ runs/
 mppe-custom-set-*/
 output_ep*/
 rtdetr-v2-L-mppe-*/
+
+mmyolo/
