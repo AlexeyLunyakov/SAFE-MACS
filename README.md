@@ -159,7 +159,7 @@ New feature | WIP | Done |
 selection of models and approaches (and their use based on the server configuration where the solution is deployed) | &#x2611; | &#x2610; | 
 optimization and quantization of the solution for use on mobile devices and low-power configurations (ZEUS, ONNX, TensorRT) | &#x2611; | &#x2610; | 
 integration of the database and multi-threaded processing of images, video, streams for full integration into the real conditions | &#x2610; | &#x2610; | 
-pipeline integration: CLIP, YOLO+CLIP and others | &#x2611; | &#x2610; | 
+pipelines integration: RT-DETRv2, RF-DETR, RTMDET and others | &#x2611; | &#x2610; | 
 
 <p align="right">(<a href="#readme-top"><i>Back to top</i></a>)</p>
 
