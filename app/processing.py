@@ -2,53 +2,89 @@ import os
 import cv2
 import csv
 from ultralytics import YOLO, RTDETR
+from rfdetr import RFDETRBase
 import supervision as sv
-
-model_1 = YOLO('./yolo11x_100.pt')
-# model_1 = YOLO('./yolo11m_20.pt')
-model_0 = RTDETR('./rtdetrl_10.pt')
+import time
+import pandas as pd
+from PIL import Image
 
 # ----------------------------- image processing -----------------------------
 
-def img_ppe_detection(source: str, result_name: str, conf_threshold: float=0.4, model_type: int=1) -> None:
+def img_ppe_detection(source: str, result_name: str, conf_threshold: float=0.4, model_type: str='YOLOv11-L') -> None:
     """
     Получение предсказания модели по входной фотографии
     :параметр source: путь до оригинального файла (строка)
     :параметр result_name: путь до нового файла (строка)
-    :return: лист предсказанний модели в формате supervision
+    :параметр conf_threshold: ограничение значения предсказания (флоат)
+    :параметр model_type: название модели-обработчика (строка)
+    :return: лист предсказанний модели в формате supervision, датафрейм времени обработки
+    ------------------
+    Obtaining model prediction from input photo
+    :parameter source: path to original file (string)
+    :parameter result_name: path to new file (string)
+    :parameter conf_threshold: limit of prediction value (float)
+    :parameter model_type: model handler name (string)
+    :return: list of model predictions in supervision format, processing time dataframe
     """
+    image = Image.open(source)
+    classes = ['Coverall', 'Face_Shield', 'Gloves', 'Googles', 'Mask']
     
-    label_annotator = sv.LabelAnnotator()
-    bbox_annotator = sv.BoxAnnotator()
+    text_scale = sv.calculate_optimal_text_scale(resolution_wh=image.size)
+    thickness = sv.calculate_optimal_line_thickness(resolution_wh=image.size)
+    
+    label_annotator = sv.LabelAnnotator(text_scale=text_scale, smart_position=True)
+    bbox_annotator = sv.BoxAnnotator(thickness=thickness)
     annotated_image = cv2.imread(source)
     
-    if model_type:
+    start_time = time.time()
+    
+    if model_type.find('YOLO'):
         # YOLO
-        predict = model_1(source)[0]
+        model = YOLO('./yolo11l_75.pt')
+        predict = model(image)[0]
         predict.boxes[predict.boxes.conf >= conf_threshold]
         detections = sv.Detections.from_ultralytics(predict)
         annotated_image = label_annotator.annotate(scene=annotated_image, detections=detections)
         
-    else:
+    elif model_type.find('RT'):
         # RT-DETR
-        results = model_0(source)[0]
+        model = RTDETR('./rtdetrl_50.pt')
+        results = model(image)[0]
         detections = sv.Detections(
             xyxy=results.boxes.xyxy.cpu().numpy(), 
             confidence=results.boxes.conf.cpu().numpy(),
             class_id=results.boxes.cls.cpu().numpy().astype(int))
-        annotated_image = label_annotator.annotate(
-            scene=annotated_image, 
-            detections=detections,
-            labels=[model_0.model.names[class_id] for class_id in detections.class_id]
-        )
+        annotated_image = label_annotator.annotate(scene=annotated_image, detections=detections, labels=[model.model.names[class_id] for class_id in detections.class_id])
+        
+    elif model_type.find('RF'):
+        # RF-DETR
+        model = RFDETRBase(pretrain_weights='./rfdetr_base_20.pth')
+        detections = model.predict(image, threshold=0.5)
+        detections_labels = [
+            f"{classes[class_id]} {confidence:.2f}"
+            for class_id, confidence
+            in zip(detections.class_id, detections.confidence)
+        ]
+        detections_image = image.copy()
+        detections_image = bbox_annotator.annotate(detections_image, detections)
+        detections_image = label_annotator.annotate(detections_image, detections, detections_labels)
         
     mask = detections.confidence >= conf_threshold
     detections = detections[mask]
-    
     annotated_image = bbox_annotator.annotate(scene=annotated_image, detections=detections)
-    
     cv2.imwrite(result_name, annotated_image)
-    return detections
+    
+    # filename = os.path.split(source)[1]
+    
+    elapsed_time = time.time() - start_time
+        
+    time_df = pd.DataFrame({
+        'filename': [os.path.split(source)[1]],
+        'model_type': [model_type],
+        'processing_time': [f'{elapsed_time:.3f} sec'],
+    })
+    
+    return detections, time_df
 
 # ----------------------------- video processing -----------------------------
 
@@ -61,76 +97,76 @@ def ms_to_time(ms):
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{ms:03d}"
 
 
-def video_ppe_detection(source: str, result_name: str, output_folder: str, conf_threshold: float=0.5, model_type: int=1) -> None:
+def video_ppe_detection(source: str, result_name: str, output_folder: str, conf_threshold: float=0.5, model_type: str='YOLOv11-L') -> None:
     """
     Получение предсказания модели по входному видео
     :параметр source: путь до оригинального файла (строка)
     :параметр result_name: путь до нового файла (строка)
+    :параметр output_folder: путь до папки хранения файлов (строка)
+    :параметр conf_threshold: ограничение значения предсказания (флоат)
+    :параметр model_type: название модели-обработчика (строка)
+    ------------------
+    Obtaining model prediction from input video
+    :parameter source: path to original file (string)
+    :parameter result_name: path to new file (string)
+    :output_folder parameter: path to file storage folder (string)
+    :parameter conf_threshold: prediction value limit (float)
+    :parameter model_type: model handler name (string)
     """
+    if model_type.find('YOLO'):
+        model = YOLO('./yolo11l_75.pt')
+    elif model_type.find('RT'):
+        model = RTDETR('./rtdetrl_50.pt')
+    elif model_type.find('RF'):
+        model = RFDETRBase(pretrain_weights='./rfdetr_base_20.pth')
+    
+    # Video setup
     video = cv2.VideoCapture(source)
-    if not video.isOpened(): print("Error opening video file"); exit()
+    if not video.isOpened(): exit()
     
-    frame_width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = video.get(cv2.CAP_PROP_FPS)
+    video_info = sv.VideoInfo.from_video_path(source)
     
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    result = cv2.VideoWriter(result_name, fourcc, fps, (frame_width, frame_height))
+    detection_data = []
+    start_time = time.time()
     
-    csv_filename = os.path.join(output_folder, 'detections.csv')
-    with open(csv_filename, 'w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(['time', 'found_classes'])
-        
-        last_class_count = None
-        label_annotator = sv.LabelAnnotator()
-        bbox_annotator = sv.BoxAnnotator()
-        
-        while video.isOpened():
-            success, frame = video.read()
-            if not success: break
+    with sv.VideoSink(target_path = result_name, video_info = video_info) as sink:
+        for frame_idx in range(frame_count):
+            ret, frame = video.read()
+            if not ret:
+                break
             
-            if model_type:
-                predict = model_1(frame)[0]
-                predict.boxes[predict.boxes.conf >= conf_threshold]
-                detections = sv.Detections.from_ultralytics(predict)
-                mask = detections.confidence >= conf_threshold
-                detections = detections[mask]
-                frame = label_annotator.annotate(scene=frame, detections=detections)
-            else:
-                predict = model_0(frame)[0]
-                detections = sv.Detections(
-                    xyxy=predict.boxes.xyxy.cpu().numpy(), 
-                    confidence=predict.boxes.conf.cpu().numpy(),
-                    class_id=predict.boxes.cls.cpu().numpy().astype(int))
-                mask = detections.confidence >= conf_threshold
-                detections = detections[mask]
-                frame = label_annotator.annotate(
-                    scene=frame, 
-                    detections=detections,
-                    labels=[model_0.model.names[class_id] for class_id in detections.class_id]
-                )
+            results = model.predict(frame, conf=conf_threshold, verbose=False)[0]
+            detections = sv.Detections.from_ultralytics(results)
+            
+            detection_data.append({
+                'frame': frame_idx,
+                'timestamp': frame_idx/fps,
+                'class_counts': pd.Series(detections.class_id).value_counts().to_dict(),
+                'boxes': detections.xyxy,
+                'confidence': detections.confidence
+            })
             
             current_time_ms = video.get(cv2.CAP_PROP_POS_MSEC)
             timestamp_str = ms_to_time(current_time_ms)
             
-            frame = bbox_annotator.annotate(scene=frame, detections=detections)
+            annotated_frame = results.plot()
+            cv2.putText(annotated_frame, timestamp_str, (10, height - 30),  cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
             
-            cv2.putText(frame, timestamp_str, (10, 30),  cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-
-            result.write(frame)
-            
-            if len(predict.boxes) > 0:
-                class_ids = predict.boxes.cls.cpu().numpy().astype(int)
-                unique_classes = set(class_ids)
-                current_count = len(unique_classes)
-                
-                if current_count != last_class_count:
-                    class_names = [model_1.names[c_id] for c_id in unique_classes]
-                    csv_writer.writerow([timestamp_str, ', '.join(class_names)])
-                    last_class_count = current_count
+            sink.write_frame(annotated_frame)
+    
+    video.release()
         
-        video.release()
-        result.release()
+    elapsed_time = time.time() - start_time
+        
+    time_df = pd.DataFrame({
+        'filename': [os.path.split(source)[1]],
+        'model_type': [model_type],
+        'processing_time': [f'{elapsed_time:.3f} sec'],
+    })
+    
+    return detection_data, time_df 
 
 # -------------------------------------------------------------------------------

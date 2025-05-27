@@ -5,6 +5,7 @@ import numpy as np
 import gradio as gr
 import pandas as pd
 import webbrowser, os
+import plotly.express as px
 import plotly.graph_objs as go
 import plotly.io as pio
 from plotly.subplots import make_subplots
@@ -12,6 +13,7 @@ from plotly.subplots import make_subplots
 from processing import *
 
 filepath = "./files/"
+result_filenames = []
 
 custom_theme = gr.themes.Monochrome(
     primary_hue="teal",
@@ -79,7 +81,7 @@ def shorten_filename(filename, max_length):
     return filename
 
 
-def create_confidence_plots(stats_df):
+def confidence_plots(stats_df):
     """
     Создание инфографики на основе средних значений достоверности
     :параметр stats_df: pd.Dataframe с результатами детекции
@@ -140,6 +142,64 @@ def create_confidence_plots(stats_df):
     return fig
 
 
+def timeline_plots(detections: list, class_names: list = None):
+    """
+    Создание инфографики на основе детекции объектов на кадрах видео
+    :параметр detections: list с результатами детекции
+    :параметр detections: list с результатами детекции
+    :return fig: график plotly
+    ------------------
+    Creating infographics based on average confidence values
+    :stats_df param: pd.Dataframe with detection results
+    :return fig: plotly graph
+    """
+    plot_data = []
+    for frame in detections:
+        timestamp = frame['timestamp']
+        for cls_id, count in frame['class_counts'].items():
+            plot_data.append({
+                'Timestamp': timestamp,
+                'Count': count,
+                'Class': f'{class_names[cls_id]}'
+            })
+
+    if not plot_data:
+        return px.line(title="No Detections Found")
+
+    df = pd.DataFrame(plot_data)
+    
+    fig = px.line(
+        df,
+        x='Timestamp',
+        y='Count',
+        color='Class',
+        title=' ',
+        labels={'Count': 'Number of Detections'},
+        hover_data=['Class', 'Count'],
+        template='plotly_white'
+    )
+    
+    fig.update_layout(
+        autosize=True,
+        paper_bgcolor='#0f172a',
+        plot_bgcolor='#0f172a',
+        font=dict(color='#ffffff'),
+        xaxis=dict(tickangle=45),
+    )
+    
+    # Enhance plot formatting
+    fig.update_layout(
+        xaxis_title='Время (сек)',
+        yaxis_title='Количество объектов',
+        hovermode='x unified',
+        legend_title_text='Найденные классы',
+        xaxis=dict(rangeslider=dict(visible=True)),
+        height=500
+    )
+    
+    return fig
+
+
 def fileOpen():
     """
     Переход к папке последней детекции через проводник системы
@@ -158,7 +218,7 @@ def photoProcessing(files, cv_model):
     ------------------
     Checking user-provided photos
     :param files: paths to files (array of strings)
-    :param cv_model: number of the selected model (integer)
+    :param cv_model: name of the selected model (string)
     :return detections_files, df, confidence_plots: images with bbox, results table, distribution graphs
     """
     if files is not None and cv_model is not None:
@@ -170,8 +230,12 @@ def photoProcessing(files, cv_model):
         global newfolder 
         newfolder = output_folder
         os.makedirs(output_folder, exist_ok=True)
-
+        
+        elapsed_times = pd.DataFrame(columns=['filename', 'model_type', 'processing_time'])
         detections_files = []
+        global result_filenames
+        result_filenames = []
+        
         class_list = ['Coverall', 'Face_Shield', 'Gloves', 'Goggles', 'Mask']
         df = pd.DataFrame(columns=['file_name', 'class_id', 'class_name', 'confidence'])
         pd.set_option('display.precision', 3)
@@ -179,17 +243,20 @@ def photoProcessing(files, cv_model):
         for elem in files:
             
             filename, _ = os.path.splitext(elem.split('\\')[-1])
+            result_filenames.append(filename)
             dfilename = os.path.join(output_folder, f'd_{filename}.jpg')
             detections_files.append(dfilename)
             
-            detections_list = img_ppe_detection(elem, dfilename, model_type=cv_model)
+            detections_list, time_df  = img_ppe_detection(elem, dfilename, model_type=cv_model)
+            elapsed_times = pd.concat([elapsed_times, time_df], ignore_index=True)
+            
             img_detections = detections_list.confidence
             img_class_id = detections_list.class_id
             img_class_names = []
             
-            if cv_model:
+            if cv_model.find('YOLO'):
                 img_class_names = detections_list.data['class_name']
-            else: 
+            elif cv_model.find('RT'):
                 for i in range(len(detections_list.class_id)):
                     img_class_names.append(class_list[detections_list.class_id[i]])
 
@@ -202,20 +269,38 @@ def photoProcessing(files, cv_model):
                 })
                 df = pd.concat([df if not df.empty else None, new_row], ignore_index=True)
         
-        detections_file_path = os.path.join(output_folder, 'detections.csv')
+        detections_file_path = os.path.join(output_folder, 'Detections.csv')
         df.to_csv(detections_file_path, sep=',', index=False)
         
-        # Красивый вывод имен файлов
-        df['file_name'] = df['file_name'].apply(lambda x: shorten_filename(x, 10))
+        # Shorten file names
+        df['file_name'] = df['file_name'].apply(lambda x: shorten_filename(x, 20))
         
-        # Подсчет статистики
+        # Unique object per image count
+        unique_files = df['file_name'].unique()
+        cross = pd.MultiIndex.from_product([unique_files, class_list], names=['file_name', 'class_name']).to_frame(index=False)
+        counts = df.groupby(['file_name', 'class_name']).size().reset_index(name='count')
+        result_df = cross.merge(counts, on=['file_name', 'class_name'], how='left').fillna({'count': 0})
+        result_df['count'] = result_df['count'].astype(int)
+        result_df = result_df[result_df['count'] > 0]
+        result_df['class_name'] = pd.Categorical(result_df['class_name'], categories=class_list, ordered=True)
+        result_df = result_df.sort_values(['file_name', 'class_name'])
+        detections_file_path = os.path.join(output_folder, 'Statistics.csv')
+        result_df.to_csv(detections_file_path, sep=',', index=False)
+        result_df.rename(columns={'file_name': 'Изображение', 'class_name': 'Найденные классы', 'count': 'Количество'}, inplace=True)
+        
+        # Statistics calculation
         file_stats_df = df.groupby(['file_name', 'class_id', 'class_name'])['confidence'].agg(['mean', 'max', 'min', 'count']).reset_index()
         file_stats_df.columns = ['file_name', 'class_id', 'class_name', 'mean_confidence', 'max_confidence', 'min_confidence', 'detection_count']
         file_stats_df[['mean_confidence', 'max_confidence', 'min_confidence']] = file_stats_df[['mean_confidence', 'max_confidence', 'min_confidence']].round(3)
         file_stats_df = file_stats_df.sort_values(['file_name', 'mean_confidence'], ascending=[True, False])
-        confidence_plots = create_confidence_plots(file_stats_df)
+        confidence_plot = confidence_plots(file_stats_df)
         inform('end')
-        return detections_files, df, confidence_plots
+        
+        # Processing time validation
+        elapsed_times['filename'] = elapsed_times['filename'].apply(lambda x: shorten_filename(x, 20))
+        elapsed_times.rename(columns={'filename': 'Изображение', 'model_type': 'Модель', 'processing_time': 'Время (сек)'}, inplace=True)
+                
+        return detections_files, result_df, confidence_plot, elapsed_times
     
     elif cv_model is None:
         warning('radio')
@@ -250,15 +335,40 @@ def videoProcessing(file, cv_model):
         filename, _ = os.path.splitext(file.split('\\')[-1])
         dfilename = os.path.join(output_folder, f'd_{filename}.mp4')
         dcsvfilename = os.path.join(output_folder, 'detections.csv')
-
-        print(dfilename, output_folder)
         
-        video_ppe_detection(source=file, result_name=dfilename, output_folder=output_folder, model_type=cv_model)
+        detection_data, time_df = video_ppe_detection(source=file, result_name=dfilename, output_folder=output_folder, model_type=cv_model)
         inform('end')
+        time_df.rename(columns={'filename': 'Изображение', 'model_type': 'Модель', 'processing_time': 'Время (сек)'}, inplace=True)
         
-        df = pd.read_csv(dcsvfilename)
+        classes = ['Coverall', 'Face_Shield', 'Gloves', 'Googles', 'Mask']
         
-        return dfilename, df
+        timeline_plot = timeline_plots(detection_data, classes)
+        
+        class_data = []
+        
+        all_classes = set()
+        
+        for frame in detection_data:
+            all_classes.update(frame['class_counts'].keys())
+        sorted_classes = sorted(all_classes)
+        
+        for frame in detection_data:
+            time_entry = {
+                'time': round(frame['timestamp'], 2)
+            }
+            for cls in sorted_classes:
+                time_entry[f'{classes[cls]}'] = frame['class_counts'].get(cls, 0)
+            class_data.append(time_entry)
+        
+        class_df = pd.DataFrame(class_data)
+        class_df = class_df.reindex(columns=['time'] + [f'{classes[cls]}' for cls in sorted_classes])
+
+        detections_file_path = os.path.join(output_folder, 'Detections.csv')
+        class_df.to_csv(detections_file_path, sep=',', index=False)
+        
+        class_df.rename(columns={'time': 'Время (сек)',}, inplace=True)
+        
+        return dfilename, time_df, timeline_plot, class_df
     elif cv_model is None:
         warning('radio')
         return None, None
@@ -266,12 +376,19 @@ def videoProcessing(file, cv_model):
         warning('file')
         return None, None
 
+def on_select(event_data: gr.SelectData):
+    """
+    Обновление названия файла после детекции
+    ------------------
+    Updating the file name after detection
+    """
+    return result_filenames[event_data.index]
 
 custom_css = """
 #theme-toggle {
     position: fixed;
     top: 10px;
-    right: 10px;
+    left: 10px;
     z-index: 1000;
     width: 30px;
     height: 30px;
@@ -279,7 +396,7 @@ custom_css = """
 #theme-toggle-2 {
     position: fixed;
     top: 10px;
-    right: 10px;
+    left: 10px;
     z-index: 1000;
     width: 30px;
     height: 30px;
@@ -346,17 +463,6 @@ theme_btns = """
         }
     }
 """
-"""
-Для результатов обработки - переделать таблицу данных
-Формат:
-
-Фотография    | Найденные классы | Количество
-img_20302.png | Coverall         | 2
-              | Face_Shield      | 1
-              | Googles          | 0
-              | Gloves           | 4
-              | Mask             | 2
-"""
 
 with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns, title='SAFE-MACS') as demo:
 
@@ -370,68 +476,81 @@ with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns, title='SAFE-MA
                     <p style="text-align:center;color:#0FC28F;line-height: 0.1;font-weight: bold;">Safety Automated Medical Control System</p>
                     <p align="center"><font size="4px">Интеллектуальная система цифрового автоконтроля<br>применения средств индивидуальной защиты медицинского персонала<br></font></p>
                     <p align="center"></p>""")
-
+    with gr.Sidebar(width=400, position='right', open=False):
+        gr.Markdown("""
+                    <h1 align="center"><font size="4px">Боковое меню<br></font></h1>
+                    """)
+        basic_info = gr.Button(value="О программе",visible=True, variant='huggingface')
+    
     with gr.Row():
         with gr.Column():
             with gr.Tab('Изображение'):
                 with gr.Row(equal_height=True):
-                    files_photo = gr.File(label="Загрузите ваши файлы здесь", file_types=['.png','.jpeg','.jpg'], file_count='multiple', scale=7)
-                    cv_model_img = gr.Radio(["YOLOv11-X", "RT-DETR-L",], value="YOLOv11-X", label="Модель", scale=1, type='index')
+                    with gr.Column(scale=3):
+                        files_photo = gr.File(label="Загрузите ваши файлы здесь", file_types=['.png','.jpeg','.jpg'], file_count='multiple')                     
+                    with gr.Column(scale=2):
+                        gr.Markdown("""<p align="start"><font size="4px">Что происходит в данном блоке?<br><br></p>
+                                        <ul><font size="3px">
+                                        <liа изображений для проверки;</li>
+                                        <li>Обработка этих изображений моделью;</li>
+                                        <li>Создание файлов результатов детекции в уникальной папке;</li>
+                                        <li>Вывод интерактивной инфографики по каждому из изображений;</li>
+                                        </ul></font>""", container=True)
                 with gr.Column():
                     with gr.Row():
-                        btn_photo = gr.Button(value="Начать распознавание",)
-                        tmp = 'end'
-                        basic_info = gr.Button(value="Инфо",visible=True)
+                        btn_photo = gr.Button(value="Начать распознавание", variant='secondary')
+                        cv_model_img = gr.Dropdown(["YOLOv11-L", "RT-DETR-L", "RF-DETR-BASE"], value="YOLOv11-L", label="Модель", container=False)
+
                 with gr.Row():
-                        with gr.Row('Результат обработки', equal_height=True):
-                            with gr.Column(variant='panel',):
+                    with gr.Column('Результат обработки'):
+                        with gr.Row():
+                            with gr.Column(variant='panel'):
                                 predictImage = gr.Gallery(type="filepath", label="Предсказание модели", columns=[2], rows=[1], preview=True, allow_preview=True, object_fit="contain", height=500)
-                                statsPLOT = gr.Plot(label='Распределение найденных классов', elem_id='stats-plot', container=True)
-                            with gr.Column():
-                                gr.Markdown("""<p align="start"><font size="4px">Что происходит в данном блоке?<br></p>
-                                            <ul><font size="3px">
-                                            <li>Загрузка изображений для проверки;</li>
-                                            <li>Обработка этих изображений моделью;</li>
-                                            <li>Создание файлов результатов детекции в уникальной папке;</li>
-                                            <li>Вывод интерактивной инфографики по каждому из изображений;</li>
-                                            <li>Фиксирование СИЗ и уверенности модели в таблице для всех изображений;</li>
-                                            </ul></font>""")
-                                predictImageClass = gr.DataFrame(headers=["Результаты обработки"], elem_id='dataframe')
+                                img_name = gr.Markdown(container=True, show_copy_button=True, min_height=50)
+                            predictImageClass = gr.DataFrame(label="Результаты обработки", headers=[" "], elem_id='dataframe', max_height=570, show_row_numbers=True, show_fullscreen_button=False, show_search='search', show_copy_button=True)
+                        with gr.Row():
+                            statsPLOT = gr.Plot(label='Распределение найденных классов', elem_id='stats-plot', container=True)
+                            time_stats = gr.DataFrame(label="Время обработки", headers=[" "], show_row_numbers=True, show_search='search')
+            
+            """-------------------------------------------------------------------------------------------------------------------------------------------------"""
+            
             with gr.Tab('Видео'):
                 with gr.Row(equal_height=True):
-                    file_video = gr.File(label="Загрузите ваши файлы здесь", file_types=['.mp4','.mkv'], file_count = 'single', scale=7)
-                    cv_model_vid = gr.Radio(["YOLOv11-X", "RT-DETR-L",], value="YOLOv11-X", label="Модель", scale=1, type='index')
+                    with gr.Column(scale=3):
+                        file_video = gr.File(label="Загрузите ваши файлы здесь", file_types=['.mp4','.mkv'], file_count = 'single', scale=7)
+                    with gr.Column(scale=2):
+                        gr.Markdown("""<p align="start"><font size="4px">Что происходит в данном блоке?<br><br></p>
+                                    <ul><font size="3px">
+                                    <li>Загрузка видео для проверки;</li>
+                                    <li>Обработка этого видео моделью;</li>
+                                    <li>Создание файлов результатов детекции в уникальной папке;</li>
+                                    <li>Вывод интерактивной инфографики по каждому из классов;</li>
+                                    </ul></font>""", container=True)
                 with gr.Column():
                     with gr.Row(): 
                         btn_video = gr.Button(value="Начать распознавание",)
-                        InfoVid = gr.Button(value="Подробнее",)
+                        cv_model_vid = gr.Dropdown(["YOLOv11-L", "RT-DETR-L", ], value="YOLOv11-L", label="Модель", container=False) #"RF-DETR-BASE"
                 with gr.Row(equal_height=True):
-                    with gr.Column(variant='panel',):
-                        predictVideo = gr.Video(label="Обработанное видео", interactive=False)
-                        # hz = gr.Plot(label='Сделать график время-класс', elem_id='stats-plot-2', container=True)
                     with gr.Column():
-                        gr.Markdown("""<p align="start"><font size="4px">Что происходит в данном блоке?<br></p>
-                                    <ul><font size="3px">
-                                    <li>Загрузка видео для проверки;</li>
-                                    <li>Обработка вашего видео моделью;</li>
-                                    <li>Создание файлов результатов детекции в уникальной папке;</li>
-                                    <li>Фиксирование СИЗ и уверенности модели в таблице с таймингами;</li>
-                                    </ul></font>""")
-                        # <li>Вывод интерактивной инфографики для найденных классов СИЗ;</li>
-                        predictVideoClass = gr.DataFrame(headers=["Результаты обработки"], elem_id='dataframe')
+                        predictVideo = gr.Video(label="Обработанное видео", interactive=False)
+                        video_time_stats = gr.DataFrame(label="Время обработки", headers=[" "], datatype=["str", "number"], show_row_numbers=True)
+                    with gr.Column():
+                        predictVideoClass = gr.DataFrame(label="Результаты обработки", headers=[" "], elem_id='dataframe', max_height=470, show_row_numbers=True, show_fullscreen_button=False, show_search='search', show_copy_button=True)
+                        timeline_plot = gr.Plot(label="Хронология классов",)
                                                         
     with gr.Row(): 
         with gr.Row(): 
-            clr_btn = gr.ClearButton([files_photo, predictImage, predictImageClass, statsPLOT, file_video, predictVideo, predictVideoClass, ], value="Очистить контекст",)
+            clr_btn = gr.ClearButton([files_photo, predictImage, predictImageClass, statsPLOT, file_video, predictVideo, predictVideoClass, time_stats, video_time_stats, timeline_plot], value="Очистить поля",)
             data_folder = gr.Button(value="Посмотреть файлы",)
     
     with gr.Row():
         gr.Markdown("""<p align="center"><a href="https://github.com/AlexeyLunyakov"><nobr>Выполнил Луняков Алексей</nobr></a></p>""")
         
-    btn_photo.click(photoProcessing, inputs=[files_photo, cv_model_img], outputs=[predictImage, predictImageClass, statsPLOT,])
-    btn_video.click(videoProcessing, inputs=[file_video, cv_model_vid], outputs=[predictVideo, predictVideoClass,])
+    predictImage.select(on_select, None, img_name)
+    
+    btn_photo.click(photoProcessing, inputs=[files_photo, cv_model_img], outputs=[predictImage, predictImageClass, statsPLOT, time_stats])
+    btn_video.click(videoProcessing, inputs=[file_video, cv_model_vid], outputs=[predictVideo, video_time_stats, timeline_plot, predictVideoClass])
     data_folder.click(fileOpen)
-    basic_info.click(inf) 
-    InfoVid.click(inf) 
+    basic_info.click(inf)
 
 demo.launch(allowed_paths=["/assets/"])
