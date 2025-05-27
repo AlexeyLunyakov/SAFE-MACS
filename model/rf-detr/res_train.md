@@ -8,4 +8,4 @@ RF-DETR Base | 29 M | 25 | 0.892 at 0.550 | 0.901 | 0.676 |
 
 Model-mAP50 | Coverall | Face Shield | Gloves | Goggles | Mask |
 --- |:---:|:---:|:---:|:---:|:---:|
-RF-DETR Base (25) | 0.967 | 0.888 | 0.896 | 0.801 | 0.955 |
+RF-DETR Base (20) | 0.967 | 0.888 | 0.896 | 0.801 | 0.955 |
