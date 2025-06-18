@@ -49,6 +49,10 @@ After conducting a preliminary analysis of analogues, it was revealed that there
 
 ## <h3 align="start"><a id="title3">Description</a></h3>
 
+<h4 align="start"><a>Solution Architecture</a></h4>
+
+<div align="center"><img width="100%" src="https://github.com/AlexeyLunyakov/SAFE-MACS/blob/main/app/assets/safe-macs-arch.png" alt="product architecture"></div>
+
 <h4 align="start"><a>FrontEnd & BackEnd</a></h4>
 
 **Gradio** was chosen as the main application development stack, as it provides the solution with:
