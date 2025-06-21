@@ -1,9 +1,8 @@
-import gradio as gr
-import time
 import os
+import time
 import requests
-from pathlib import Path
-from typing import Dict
+import gradio as gr
+from io import BytesIO
 from roboflow_pipes import *
 
 filepath = "./files/"
@@ -83,8 +82,8 @@ def run_training(model_name, model_size, api_key, workspace, project, version, e
             
         time.sleep(20)
 
-def run_inference(model_type, model_size, checkpoint_path, threshold, input_image):
-    
+def run_inference(model_type, model_size, checkpoint_path, threshold, input_files):
+      
     request_data = {
         "model_name": model_type,
         "model_size": model_size,
@@ -92,13 +91,33 @@ def run_inference(model_type, model_size, checkpoint_path, threshold, input_imag
         "conf_threshold": threshold,
     }
     
-    response = requests.post(
-        f"{BACKEND_URL}/start_inference",
-        data=request_data,
-    )
+    processed_images = []
     
-    response_data = response.json()
-    return response_data
+    for file_path in input_files:
+        try:
+            with open(file_path, 'rb') as f:
+                files = {'image_file': f}
+                
+                response = requests.post(
+                    f"{BACKEND_URL}/inference",
+                    data=request_data,
+                    files=files
+                )
+                
+            if response.status_code == 200:
+                img = Image.open(BytesIO(response.content))
+                processed_images.append(img)
+            else:
+                error_msg = f"Error for {file_path}: {response.text}"
+                print(error_msg)
+                processed_images.append(None)
+                
+        except Exception as e:
+            error_msg = f"Failed to process {file_path}: {str(e)}"
+            print(error_msg)
+            processed_images.append(None)
+    
+    return processed_images
 
 MODEL_CONFIG = {
     "yolov12": {"sizes": ["nano", "small", "medium", "large"]},
@@ -125,7 +144,6 @@ with gr.Blocks(theme=custom_theme, title='CVM-TS') as demo:
         with gr.Tab("Training"):
             with gr.Row():
                 with gr.Column():
-                    # Models' Settings
                     with gr.Accordion("Model Settings", open=True):
                         model_name = gr.Dropdown(
                             label="Model Architecture",
@@ -138,7 +156,6 @@ with gr.Blocks(theme=custom_theme, title='CVM-TS') as demo:
                             value="nano"
                         )
                     
-                    # Roboflow Settings
                     with gr.Accordion("Roboflow Dataset Settings", open=False):
                         api_key = gr.Textbox(label="API Key", type="password", value="pEbpvVmHCmE4sFlvI8Og")
                         workspace = gr.Textbox(label="Workspace", value="safemacsws")
@@ -150,7 +167,6 @@ with gr.Blocks(theme=custom_theme, title='CVM-TS') as demo:
                             status = gr.Textbox(value="Not Prepared", show_label=False, container=False)
                             tmp = gr.Textbox(render=False)
                     
-                    # Hyperparameters
                     with gr.Accordion("Training Hyperparameters (WIP)", open=False):
                         epochs = gr.Slider(
                             label="Epochs", 
@@ -213,7 +229,6 @@ with gr.Blocks(theme=custom_theme, title='CVM-TS') as demo:
     with gr.Row():
         gr.Markdown("""<p align="center"><a href="https://github.com/AlexeyLunyakov"><nobr>Created solo by Alexey Lunyakov</nobr></a></p>""")
     
-    # Event handlers
     model_name.change(
         update_model_sizes,
         inputs=model_name,
