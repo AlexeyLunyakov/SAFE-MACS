@@ -1,13 +1,11 @@
 import os
 import uuid
-import time
-import numpy as np
+import torch
 import gradio as gr
 import pandas as pd
 import webbrowser, os
 import plotly.express as px
 import plotly.graph_objs as go
-import plotly.io as pio
 from plotly.subplots import make_subplots
 
 from processing import *
@@ -15,6 +13,8 @@ from processing import *
 HOME = os.getcwd()
 
 CLASS_LIST = ['Coverall', 'Face_Shield', 'Gloves', 'Googles', 'Mask']
+
+MODELS_LIST = ["YOLOv11-L", "RT-DETR-L", "RF-DETR-BASE"] if torch.cuda.is_available() else ["YOLOv11-L"]
 
 custom_theme = gr.themes.Monochrome(
     primary_hue="teal",
@@ -260,12 +260,13 @@ def generate_statistics(detections_df, class_list):
 
 RESULT_FILENAMES = []
 
-def photoProcessing(files, model_type):
+def photoProcessing(files, model_type, pred_classes):
     """
     Checking user-provided photos
     
     :parameter files: paths to files (array of strings)
     :parameter model_type: name of the selected model (string)
+    :parameter pred_classes: names of the selected classes (list)
     :return detections_files, df, confidence_plots: images with bbox, results table, distribution graphs
     
     ------------------
@@ -273,6 +274,7 @@ def photoProcessing(files, model_type):
     
     :parameter files: пути до файлов (массив строк)
     :parameter model_type: номер выбранной модели (целое)
+    :parameter pred_classes: имена выбранных классов (список)
     :return detections_files, df, confidence_plots: изображения с bbox, таблица результатов, графики распределения
     """
     if not files or model_type is None:
@@ -298,7 +300,7 @@ def photoProcessing(files, model_type):
         output_path = os.path.join(output_folder, f'd_{filename}.jpg')
         detections_files.append(output_path)
         
-        detections, time_df = img_ppe_detection(file_path, output_path, model_type=model_type)
+        detections, time_df = img_ppe_detection(file_path, output_path, model_type=model_type, class_names=pred_classes)
         elapsed_times.append({
             'filename': filename,
             'model_type': model_type,
@@ -357,12 +359,13 @@ def photoProcessing(files, model_type):
     return detections_files, report_df, confidence_plot, time_df, output_folder
 
 
-def videoProcessing(file, model_type):
+def videoProcessing(file, model_type, pred_classes):
     """
     Checking user-provided video
     
     :param file: path to file (string)
     :param model_type: number of selected model (integer)
+    :parameter pred_classes: names of the selected classes (list)
     :return dfilename, df: path to video from bbox, results table
     
     ------------------
@@ -370,6 +373,7 @@ def videoProcessing(file, model_type):
     
     :param file: путь до файла (строка)
     :param model_type: номер выбранной модели (целое)
+    :parameter pred_classes: имена выбранных классов (список)
     :return dfilename, df: путь до видео с bbox, таблица результатов  
     """
     if not file or model_type is None:
@@ -387,7 +391,8 @@ def videoProcessing(file, model_type):
         source=file,
         result_name=output_video,
         output_folder=output_folder,
-        model_type=model_type
+        model_type=model_type, 
+        class_names=pred_classes
     )
 
     timeline_plot = timeline_plots(detection_data, CLASS_LIST)
@@ -547,14 +552,24 @@ with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns, title='SAFE-MA
                                         <li>Вывод интерактивной инфографики по каждому из изображений;</li>
                                         </ul></font>""", container=True)
                 with gr.Column():
-                    with gr.Row():
-                        btn_photo = gr.Button(value="Начать распознавание", variant='secondary')
-                        model_type_img = gr.Dropdown(
-                            ["YOLOv11-L", "RT-DETR-L", "RF-DETR-BASE"], 
-                            value="YOLOv11-L", 
-                            label="Модель", 
-                            container=False
-                        )
+                    with gr.Row(equal_height=False):
+                        with gr.Column(scale=3):
+                            btn_photo = gr.Button(value="Начать распознавание", variant='secondary')
+                        with gr.Column(scale=1):
+                            model_type_img = gr.Dropdown(
+                                MODELS_LIST, 
+                                value="YOLOv11-L", 
+                                # info="Модель", 
+                                container=False
+                            )
+                        with gr.Column(scale=3):
+                            checkboxes = gr.CheckboxGroup(
+                                choices=CLASS_LIST,
+                                value=[CLASS_LIST[0]],
+                                show_label=False,
+                                interactive=True,
+                                container=False,
+                            )
 
                 with gr.Row():
                     with gr.Column('Результат обработки'):
@@ -623,14 +638,25 @@ with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns, title='SAFE-MA
                                     <li>Вывод интерактивной инфографики по каждому из классов;</li>
                                     </ul></font>""", container=True)
                 with gr.Column():
-                    with gr.Row(): 
-                        btn_video = gr.Button(value="Начать распознавание",)
-                        model_type_vid = gr.Dropdown(
-                            ["YOLOv11-L", "RT-DETR-L", ], 
-                            value="YOLOv11-L", 
-                            label="Модель", 
-                            container=False
-                        )
+                    with gr.Row():
+                        with gr.Column(scale=3):
+                            btn_video = gr.Button(value="Начать распознавание",)
+                        with gr.Column(scale=1):
+                            model_type_vid = gr.Dropdown(
+                                MODELS_LIST, 
+                                value="YOLOv11-L", 
+                                label="Модель", 
+                                container=False
+                            )
+                        with gr.Column(scale=3):
+                            checkboxes_v = gr.CheckboxGroup(
+                                choices=CLASS_LIST,
+                                value=[CLASS_LIST[0]],
+                                show_label=False,
+                                interactive=True,
+                                container=False,
+                            )
+
                 with gr.Row(equal_height=True):
                     with gr.Column():
                         predictVideo = gr.Video(
@@ -657,14 +683,16 @@ with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns, title='SAFE-MA
                         timeline_plot = gr.Plot(label="Хронология классов",)
                                                         
     with gr.Row(): 
-        with gr.Row(): 
+        with gr.Row():
+            gr.Markdown()
             clr_btn = gr.ClearButton(
                 [files_photo, predictImage, predictImageClass, 
                  statsPLOT, file_video, predictVideo, 
                  predictVideoClass, time_stats, video_time_stats, 
                  timeline_plot, img_name], 
                 value="Очистить поля",)
-            data_folder = gr.Button(value="Посмотреть файлы",)
+            gr.Markdown()
+            # data_folder = gr.Button(value="Посмотреть файлы",)
     
     with gr.Row():
         gr.Markdown("""<p align="center"><a href="https://github.com/AlexeyLunyakov"><nobr>Created solo by Alexey Lunyakov</nobr></a></p>""")
@@ -673,18 +701,18 @@ with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns, title='SAFE-MA
     
     btn_photo.click(
         photoProcessing, 
-        inputs=[files_photo, model_type_img],
+        inputs=[files_photo, model_type_img, checkboxes],
         outputs=[predictImage, predictImageClass, statsPLOT, time_stats, folder_name]
     )
     btn_video.click(
         videoProcessing, 
-        inputs=[file_video, model_type_vid], 
+        inputs=[file_video, model_type_vid, checkboxes_v], 
         outputs=[predictVideo, video_time_stats, timeline_plot, predictVideoClass, folder_name]
     )
-    data_folder.click(
-        fileOpen, 
-        inputs=folder_name
-    )
+    # data_folder.click(
+    #     fileOpen, 
+    #     inputs=folder_name
+    # )
     basic_info.click(inf)
 
 demo.launch(allowed_paths=["/assets/"])

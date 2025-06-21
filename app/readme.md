@@ -49,10 +49,10 @@ rf-detr-base | 0.967 | 0.888 | 0.896 | 0.801 | 0.955 |
     python -m venv .venv
     .venv\Scripts\activate
     ```
-    - Installing dependencies (CUDA 12.4 required):
+    - Installing dependencies (installed CUDA required):
     ```
     pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
-    pip3 install -r requirements.txt
+    pip3 install -r requirements_base.txt
     ```
     - After installing the dependencies (3-5 minutes), you can run Gradio:
     ```
@@ -63,5 +63,33 @@ rf-detr-base | 0.967 | 0.888 | 0.896 | 0.801 | 0.955 |
     ```
     cd ./app/
     gradio app.py
+    ```
+</details> 
+
+<details>
+  <summary> <strong><i>Testing models with a Docker:</i></strong> </summary>
+  
+  - In Visual Studio Code (**Windows-PowerShell recommended**) through the terminal, run the following commands sequentially:
+
+    - Clone the repository:
+    ```
+    git clone https://github.com/AlexeyLunyakov/SAFE-MACS.git
+    ```
+    - Create your parent directory for docker-machine results output:
+    ```
+    mkdir -p docker_files
+    ```
+    - Image build:
+    ```
+    docker build -t cv-app -f Dockerfile.gpu .
+    ```
+    - After installing the dependencies (3-5 minutes), you can run Container with GPU:
+    ```
+    docker run -d --gpus all -p 7860:7860 -v "$(pwd)/docker_files:/app/files" --name cv-container cv-app
+    ```
+    or with CPU-only:
+    ```
+    docker build -t cv-app -f Dockerfile.cpu .
+    docker run -p 7861:7860 -v "$(pwd)/docker_files:/app/files" --name cv-container cv-app
     ```
 </details> 

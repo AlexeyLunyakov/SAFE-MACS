@@ -1,0 +1,10 @@
+gradio==5.34.2
+numpy==2.3.1
+opencv_python==4.11.0.86
+opencv_python_headless==4.10.0.84
+pandas==2.3.0
+Pillow==11.2.1
+plotly==6.1.2
+rfdetr==1.1.0
+supervision==0.25.1
+ultralytics==8.3.157

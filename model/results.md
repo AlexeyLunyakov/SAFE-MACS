@@ -1,3 +1,10 @@
+## Designation of datasets:
+* 1017 - cppe5 dataset
+* 4055 - mppe-custom-set (own)
+    * 4055 wp - with preprocess
+    * 4055 np - no preprocess (tried for the sake of experiment)
+
+
 ## Final metrics of the models:
 
 Model | params | epochs | F1 | map50 | map50-95 | data |
@@ -12,6 +19,7 @@ rt-detr-v2-l | 42 М | 50 | 0.82 at 0.550 | 0.823 | 0.606 | 4055 wp
 rtmdet_l | 52.3 М | 50 | 0.311 at 0.550 | 0.731 | 0.456 | 4055 wp
 rf-detr-base | 29 M | 5 | 0.843 at 0.550 | 0.849 | 0.630 | 4055 wp
 rf-detr-base | 29 M | 20 | 0.892 at 0.550 | 0.901 | 0.676 | 4055 wp
+
 
 ## Mean Average Precision for all classes:
 
@@ -29,8 +37,3 @@ rtmdet_l (50) | 0.643 | 0.518 | 0.427 | 0.286 | 0.659 | 4055 wp
 rf-detr-base (20) | 0.967 | 0.888 | 0.896 | 0.801 | 0.955 | 4055 wp
 
 
-## Designation of datasets:
-* 1017 - cppe5 dataset
-* 4055 - mppe-custom-set (own)
-    * 4055 wp - with preprocess
-    * 4055 np - no preprocess (tried for the sake of experiment)

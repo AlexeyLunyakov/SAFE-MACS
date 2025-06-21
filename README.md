@@ -76,7 +76,7 @@ Priority classes - **Masks, Gloves, and Coveralls** - were identified through vi
 
 <h4 align="start"><a>Machine Learning</a></h4>
 
-Architecture with multiple models has been implemented, allowing dynamic selection between, for example, YOLOv11-L and RT-DETR-L (or ONNX versions) based on deployment requirements. This approach balances detection accuracy and processing speed while minimizing hardware dependencies.
+Architecture with multiple models has been implemented, allowing dynamic selection between, for example, YOLOv11-L, RT-DETR-L and RF-DETR based on deployment requirements and one's own choice. This approach balances detection accuracy and processing speed while minimizing hardware dependencies. For ease of data presentation, the ability to predict only those classes that the user selects in the interface has been added.
 
 > *During the design of the system, other models were also trained (RT-DETRv2, RTMDet, RF-DETR), so in the final version, the user was provided with a choice of pipelines in the user interface. Model training, as well as weights, which GitHub allows place, are located in the corresponding directories.* 
 
@@ -121,7 +121,7 @@ coming soon | &#x2610; |
   <br />
 
 <details>
-  <summary> <strong><i>Testing models with an app on Gradio:</i></strong> </summary>
+  <summary> <strong><i>Testing models with an Inference app:</i></strong> </summary>
   
   - In Visual Studio Code (**Windows-PowerShell recommended**) through the terminal, run the following commands sequentially:
 
@@ -129,29 +129,26 @@ coming soon | &#x2610; |
     ```
     git clone https://github.com/AlexeyLunyakov/SAFE-MACS.git
     ```
-    - Creating and activating a virtual environment:
+    - Create your parent directory for docker-machine results output:
     ```
-    cd ./SAFE-MACS
-    python -m venv .venv
-    .venv\Scripts\activate
+    mkdir -p docker_files
     ```
-    - Installing dependencies (CUDA 12.4 required):
+    - Image build:
     ```
-    pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
-    pip3 install -r requirements.txt
+    docker build -t cv-app -f Dockerfile.gpu .
     ```
-    - After installing the dependencies (3-5 minutes), you can run Gradio:
+    - After installing the dependencies (3-5 minutes), you can run Container with GPU:
     ```
-    cd ./app/
-    python ./app.py
+    docker run -d --gpus all -p 7860:7860 -v "$(pwd)/docker_files:/app/files" --name cv-container cv-app
     ```
-    or with the ability to automatically restart if errors occur:
+    or with CPU-only:
     ```
-    cd ./app/
-    gradio app.py
+    docker build -t cv-app -f Dockerfile.cpu .
+    docker run -p 7861:7860 -v "$(pwd)/docker_files:/app/files" --name cv-container cv-app
     ```
-
 </details> 
+
+Additional instructions for installation and use can be found [here](https://github.com/AlexeyLunyakov/SAFE-MACS/blob/main/app/readme.md) and [there](https://github.com/AlexeyLunyakov/SAFE-MACS/blob/main/app_train/readme.md)
 
 <p align="right">(<a href="#readme-top"><i>Back to top</i></a>)</p>
 
