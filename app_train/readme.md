@@ -35,14 +35,14 @@ The full testing table can be found [here](https://github.com/AlexeyLunyakov/SAF
     ```
     - Creating and activating a virtual environment:
     ```
-    cd ./SAFE-MACS
+    cd ./SAFE-MACS/app_train
     python -m venv .venv
     .venv\Scripts\activate
     ```
     - Installing dependencies (CUDA 12.4 required):
     ```
     pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
-    pip3 install -r requirements.txt
+    pip3 install -r requirements_train.txt
     ```
     - After installing the dependencies (3-5 minutes), you can run Gradio:
     ```

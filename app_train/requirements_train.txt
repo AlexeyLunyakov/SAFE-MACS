@@ -1,0 +1,16 @@
+albumentations==2.0.8
+fastapi==0.115.14
+gradio==5.35.0
+numpy==2.3.1
+opencv_python==4.11.0.86
+opencv_python_headless==4.10.0.84
+Pillow==11.2.1
+pydantic==2.11.7
+Requests==2.32.4
+rfdetr==1.1.0
+roboflow==1.1.66
+supervision==0.25.1
+torch==2.7.1
+torchmetrics==1.7.3
+transformers==4.52.4
+ultralytics==8.3.157

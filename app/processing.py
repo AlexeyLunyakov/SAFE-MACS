@@ -145,7 +145,7 @@ def video_ppe_detection(source: str, result_name: str, output_folder: str, conf_
     
     detection_data = []
     start_time = time.time()
-    print(class_names)
+    
     with sv.VideoSink(target_path = result_name, video_info = video_info, codec="mp4v") as sink:
         for frame_idx in range(frame_count):
             ret, frame = video.read()

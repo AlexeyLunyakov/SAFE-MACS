@@ -288,6 +288,7 @@ def photoProcessing(files, model_type, pred_classes):
     all_detections = []
     elapsed_times = []
     detections_files = []
+    tmp = []
     
     is_yolo = 'YOLO' in model_type
     is_rt = 'RT' in model_type
@@ -295,7 +296,7 @@ def photoProcessing(files, model_type, pred_classes):
     
     for file_path in files:
         filename = os.path.splitext(os.path.basename(file_path))[0]
-        RESULT_FILENAMES.append(filename)
+        tmp.append(filename)
         
         output_path = os.path.join(output_folder, f'd_{filename}.jpg')
         detections_files.append(output_path)
@@ -324,7 +325,9 @@ def photoProcessing(files, model_type, pred_classes):
                 'class_name': class_names[i],
                 'confidence': round(float(confidences[i]), 3)
             })
-    
+    if RESULT_FILENAMES != []:
+        RESULT_FILENAMES.clear()
+    RESULT_FILENAMES.extend(tmp)
     detections_df = pd.DataFrame(all_detections)
     detections_df.to_csv(os.path.join(output_folder, 'Detections.csv'), index=False)
     
@@ -457,11 +460,11 @@ custom_css = """
 
 def theme(new_theme):
     """
-    Изменение темы светлая\темная
+    Изменение темы светлая-темная
     :параметр new_theme: путь до файла (строка)
     :return toggle_theme: переключение темы
     ------------------
-    Change theme light\dark
+    Change theme light-dark
     :param new_theme: path to file (string)
     :return toggle_theme: switch theme
     """
@@ -565,7 +568,7 @@ with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns, title='SAFE-MA
                         with gr.Column(scale=3):
                             checkboxes = gr.CheckboxGroup(
                                 choices=CLASS_LIST,
-                                value=[CLASS_LIST[0]],
+                                value=[CLASS_LIST[i] for i in range(len(CLASS_LIST))],
                                 show_label=False,
                                 interactive=True,
                                 container=False,
@@ -651,7 +654,7 @@ with gr.Blocks(theme=custom_theme, css=custom_css, js=theme_btns, title='SAFE-MA
                         with gr.Column(scale=3):
                             checkboxes_v = gr.CheckboxGroup(
                                 choices=CLASS_LIST,
-                                value=[CLASS_LIST[0]],
+                                value=[CLASS_LIST[i] for i in range(len(CLASS_LIST))],
                                 show_label=False,
                                 interactive=True,
                                 container=False,
